@@ -123,6 +123,7 @@ export function useMultiplayer() {
         setFeedback(null)
         setAnswer('')
         setFirstCorrect(null)
+        setScreen('game')
         startSilhouetteTimer()
       })
 
