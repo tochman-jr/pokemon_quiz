@@ -19,15 +19,15 @@ export default function MultiplayerResults({ players, playerName, onPlayAgain })
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            className={`flex items-center gap-4 rounded-2xl px-5 py-4
+            className={`flex items-center gap-2 md:gap-4 rounded-2xl px-4 md:px-5 py-3 md:py-4 flex-wrap
               ${p.name === playerName
                 ? 'bg-poke-yellow text-poke-navy'
                 : 'bg-poke-dark-blue text-white border border-poke-blue/30'}`}
           >
-            <span className="text-2xl">{medals[i] ?? `#${i + 1}`}</span>
-            <span className="font-nunito font-800 text-lg flex-1">{p.name}</span>
-            <span className="font-bangers text-2xl">⭐ {p.points ?? 0}</span>
-            <span className="font-nunito text-xs opacity-60">
+            <span className="text-xl md:text-2xl">{medals[i] ?? `#${i + 1}`}</span>
+            <span className="font-nunito font-800 text-base md:text-lg flex-1 min-w-0 truncate">{p.name}</span>
+            <span className="font-bangers text-xl md:text-2xl">⭐ {p.points ?? 0}</span>
+            <span className="font-nunito text-xs opacity-60 w-full sm:w-auto">
               {p.correct ?? 0}/{p.total ?? 0} correct
             </span>
           </motion.div>

@@ -36,7 +36,7 @@ export default function QuizGame({
         className="w-full bg-gradient-to-b from-poke-dark-blue to-poke-navy rounded-3xl p-6 shadow-[0_8px_40px_rgba(0,0,0,0.5)] border border-poke-blue/30"
       >
         {/* Hint text */}
-        <p className="font-nunito text-blue-300 text-sm text-center mb-4 font-600 tracking-wide uppercase">
+        <p className="font-nunito text-blue-300 text-xs md:text-sm text-center mb-4 font-600 tracking-wide uppercase">
           {revealed ? pokemon?.name : showSilhouette ? `Who's that Pokémon? ⭐ ${pointsAvailable} pts` : `Who's that Pokémon? ⭐ ${pointsAvailable} pt`}
         </p>
 

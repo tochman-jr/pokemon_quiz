@@ -10,7 +10,7 @@ export default function StartScreen({ onStart, onBack }) {
         transition={{ type: 'spring', stiffness: 80, delay: 0.1 }}
         className="relative mb-8 select-none"
       >
-        <div className="w-40 h-40 rounded-full border-8 border-poke-navy bg-white overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
+        className="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-8 border-poke-navy bg-white overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
           {/* Top half */}
           <div className="absolute top-0 left-0 w-full h-1/2 bg-red-500" />
           {/* Center band */}
@@ -25,7 +25,7 @@ export default function StartScreen({ onStart, onBack }) {
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 100, delay: 0.25 }}
-        className="font-bangers text-6xl md:text-8xl text-poke-yellow drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] tracking-widest mb-2"
+        className="font-bangers text-5xl sm:text-6xl md:text-8xl text-poke-yellow drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] tracking-widest mb-2"
       >
         WHO'S THAT
       </motion.h1>
@@ -33,7 +33,7 @@ export default function StartScreen({ onStart, onBack }) {
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 100, delay: 0.35 }}
-        className="font-bangers text-4xl md:text-6xl text-white tracking-widest mb-6"
+        className="font-bangers text-3xl sm:text-4xl md:text-6xl text-white tracking-widest mb-6"
       >
         POKÉMON?
       </motion.h2>

@@ -60,13 +60,13 @@ export default function MultiplayerGame({
         className="w-full bg-gradient-to-b from-poke-dark-blue to-poke-navy rounded-3xl p-6 shadow-[0_8px_40px_rgba(0,0,0,0.5)] border border-poke-blue/30"
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide uppercase">
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide uppercase shrink-0">
             Q{questionIndex + 1}
           </p>
           {showSilhouette && (
-            <div className="flex items-center gap-2">
-              <span className="font-nunito text-blue-300 text-xs">Image in</span>
+            <div className="flex items-center gap-1">
+              <span className="font-nunito text-blue-300 text-xs hidden sm:inline">Image in</span>
               <motion.span
                 key={silhouetteCountdown}
                 initial={{ scale: 1.4, color: '#facc15' }}
@@ -77,8 +77,8 @@ export default function MultiplayerGame({
               </motion.span>
             </div>
           )}
-          <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide uppercase">
-            {showSilhouette ? '⭐ 5 pts (first)' : '⭐ 3 pts (first)'}
+          <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide uppercase shrink-0">
+            {showSilhouette ? '⭐5 (first)' : '⭐3 (first)'}
           </p>
         </div>
 

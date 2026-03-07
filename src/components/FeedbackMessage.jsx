@@ -47,8 +47,8 @@ export default function FeedbackMessage({ feedback, pokemonName }) {
           transition={{ type: 'spring', stiffness: 300, damping: 22 }}
           className={`
             ${cfg.bg} border-2 ${cfg.border}
-            flex items-center gap-3 px-6 py-4 rounded-2xl shadow-xl
-            font-nunito font-800 text-white text-xl
+            flex items-center gap-2 px-4 md:px-6 py-3 md:py-4 rounded-2xl shadow-xl
+            font-nunito font-800 text-base md:text-xl text-white w-full justify-center text-center
           `}
         >
           <span className="text-3xl">{cfg.icon}</span>
