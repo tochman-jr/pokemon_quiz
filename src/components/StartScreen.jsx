@@ -10,7 +10,7 @@ export default function StartScreen({ onStart, onBack }) {
         transition={{ type: 'spring', stiffness: 80, delay: 0.1 }}
         className="relative mb-8 select-none"
       >
-        className="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-8 border-poke-navy bg-white overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
+        <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-8 border-poke-navy bg-white overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
           {/* Top half */}
           <div className="absolute top-0 left-0 w-full h-1/2 bg-red-500" />
           {/* Center band */}

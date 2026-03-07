@@ -23,7 +23,11 @@ export default function PokemonImage({ pokemon, showSilhouette }) {
                   src={pokemon.image_url}
                   alt="Who's that Pokémon?"
                   className="w-48 h-48 md:w-64 md:h-64 object-contain"
-                  style={{ filter: 'brightness(0) invert(1)' }}
+                  style={{
+                    filter: pokemon.image_url?.endsWith('.png')
+                      ? 'brightness(0) invert(1)'  // transparent PNG → white silhouette
+                      : 'brightness(0.15) contrast(1.5) saturate(0) blur(2px)', // JPEG fallback: dark blur
+                  }}
                   draggable={false}
                   exit={{ opacity: 0, scale: 1.1 }}
                   transition={{ duration: 0.3 }}
