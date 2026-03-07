@@ -47,7 +47,7 @@ export default function PokemonImage({ pokemon, showSilhouette }) {
 
       {/* Pokemon number badge (only when revealed) */}
       <AnimatePresence>
-        {revealed && pokemon && (
+        {!showSilhouette && pokemon && (
           <motion.span
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}

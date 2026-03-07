@@ -1,6 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
 
 const configs = {
+  correct5: {
+    bg: 'bg-green-400',
+    border: 'border-green-300',
+    icon: '⚡',
+    label: (name) => `Correct! It's ${name}! +5 pts`,
+  },
   correct3: {
     bg: 'bg-green-500',
     border: 'border-green-400',

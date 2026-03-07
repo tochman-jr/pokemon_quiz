@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-export default function StartScreen({ onStart }) {
+export default function StartScreen({ onStart, onBack }) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-6 text-center">
       {/* Pokeball decoration */}
@@ -58,6 +58,18 @@ export default function StartScreen({ onStart }) {
       >
         START QUIZ!
       </motion.button>
+
+      {onBack && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          onClick={onBack}
+          className="font-nunito text-blue-300 text-sm mt-4 hover:text-white transition-colors"
+        >
+          ← Back to menu
+        </motion.button>
+      )}
     </div>
   )
 }
