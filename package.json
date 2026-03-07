@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "serve dist",
     "scrape": "node scripts/scrape-pokemon.js",
     "process-images": "node scripts/process-images.js"
   },
