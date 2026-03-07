@@ -1,24 +1,12 @@
 /**
  * Pokemon Scraper
- * Scrapes the first 151 Pokemon from pokemondb.net and stores them in Supabase.
+ * Scrapes the first 151 Pokemon from pokemondb.net, uploads their images to
+ * a Supabase storage bucket, and stores the data in the pokemons table.
  *
  * Usage:
  *   1. Copy .env.example to .env and fill in your Supabase credentials.
- *   2. Run: npm run scrape
- *
- * Supabase table schema (run this SQL in your Supabase SQL editor first):
- *
- *   CREATE TABLE pokemons (
- *     id         BIGSERIAL PRIMARY KEY,
- *     number     INT UNIQUE NOT NULL,
- *     name       TEXT NOT NULL,
- *     image_url  TEXT NOT NULL,
- *     created_at TIMESTAMPTZ DEFAULT NOW()
- *   );
- *
- *   -- Allow public read access
- *   ALTER TABLE pokemons ENABLE ROW LEVEL SECURITY;
- *   CREATE POLICY "Allow public read" ON pokemons FOR SELECT USING (true);
+ *   2. Run the SQL migration in supabase/migrations/ in your Supabase SQL editor.
+ *   3. Run: npm run scrape
  */
 
 import puppeteer from 'puppeteer'
@@ -27,7 +15,6 @@ import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
-// Load .env manually (no dotenv dependency needed)
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const envPath = resolve(__dirname, '../.env')
 
@@ -53,13 +40,46 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey)
+const BUCKET_NAME = 'pokemon-images'
+
+async function ensureBucket() {
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+  if (listError) throw new Error(`Could not list buckets: ${listError.message}`)
+
+  if (buckets?.some((b) => b.name === BUCKET_NAME)) {
+    console.log(`🪣 Bucket "${BUCKET_NAME}" already exists`)
+    return
+  }
+
+  const { error } = await supabase.storage.createBucket(BUCKET_NAME, { public: true })
+  if (error) throw new Error(`Failed to create bucket "${BUCKET_NAME}": ${error.message}`)
+  console.log(`🪣 Created storage bucket: ${BUCKET_NAME}`)
+}
+
+async function uploadImage(number, name, artworkUrl) {
+  const fileName = `${String(number).padStart(3, '0')}-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.jpg`
+
+  const response = await fetch(artworkUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PokemonScraper/1.0)' },
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${artworkUrl}`)
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: true })
+  if (error) throw new Error(`Upload failed: ${error.message}`)
+
+  const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName)
+  return data.publicUrl
+}
 
 async function scrapePokemon() {
   console.log('🚀 Launching browser...')
   const browser = await puppeteer.launch({ headless: true })
   const page = await browser.newPage()
 
-  // Set a user-agent to avoid bot detection
   await page.setUserAgent(
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
   )
@@ -85,13 +105,10 @@ async function scrapePokemon() {
       const number = parseInt(numberEl.textContent.trim(), 10)
       const name = nameEl.textContent.trim()
 
-      // Extract image URL from data-src or src attribute of the sprite
       const imgSrc = imgEl
         ? imgEl.getAttribute('data-src') || imgEl.getAttribute('src') || ''
         : ''
 
-      // Construct high-quality artwork URL from pokemondb.net
-      // e.g. https://img.pokemondb.net/artwork/large/bulbasaur.jpg
       const nameLower = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
       const artworkUrl = `https://img.pokemondb.net/artwork/large/${nameLower}.jpg`
 
@@ -120,7 +137,22 @@ async function scrapePokemon() {
     process.exit(1)
   }
 
+  // Download and upload each image to Supabase storage
+  console.log('\n📸 Uploading images to Supabase storage...')
+  let uploaded = 0
+  for (const pokemon of gen1) {
+    try {
+      pokemon.image_url = await uploadImage(pokemon.number, pokemon.name, pokemon.image_url)
+      uploaded++
+      process.stdout.write(`\r  ✅ ${uploaded}/${gen1.length} uploaded (latest: #${pokemon.number} ${pokemon.name})`)
+    } catch (err) {
+      console.warn(`\n  ⚠️  #${pokemon.number} ${pokemon.name}: ${err.message} — keeping original URL`)
+    }
+  }
+  console.log(`\n✅ Images uploaded: ${uploaded}/${gen1.length}`)
+
   // Upsert into Supabase in batches of 50
+  console.log('\n💾 Saving to database...')
   const BATCH_SIZE = 50
   for (let i = 0; i < gen1.length; i += BATCH_SIZE) {
     const batch = gen1.slice(i, i + BATCH_SIZE)
@@ -135,7 +167,7 @@ async function scrapePokemon() {
     console.log(`📦 Inserted batch ${i / BATCH_SIZE + 1} (${batch.length} pokemon)`)
   }
 
-  console.log('\n🎉 Done! All 151 Generation 1 Pokemon stored in Supabase.')
+  console.log('\n🎉 Done! All 151 Generation 1 Pokemon stored in Supabase with images in storage bucket.')
   console.log('Sample entries:')
   gen1.slice(0, 3).forEach((p) => console.log(`  #${p.number} ${p.name} → ${p.image_url}`))
 }

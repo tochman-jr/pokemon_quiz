@@ -16,37 +16,14 @@ export default function PokemonImage({ pokemon, revealed }) {
             transition={{ type: 'spring', stiffness: 200, damping: 18 }}
             className="relative z-10"
           >
-            {/* Silhouette layer */}
-            <AnimatePresence>
-              {!revealed && (
-                <motion.img
-                  key="silhouette"
-                  src={pokemon.image_url}
-                  alt="Who's that Pokémon?"
-                  className="w-48 h-48 md:w-64 md:h-64 object-contain"
-                  style={{ filter: 'brightness(0) saturate(0)' }}
-                  draggable={false}
-                  exit={{ opacity: 0, scale: 1.1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              )}
-            </AnimatePresence>
-
-            {/* Revealed colour layer */}
-            <AnimatePresence>
-              {revealed && (
-                <motion.img
-                  key="revealed"
-                  src={pokemon.image_url}
-                  alt={pokemon.name}
-                  className="w-48 h-48 md:w-64 md:h-64 object-contain"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  draggable={false}
-                />
-              )}
-            </AnimatePresence>
+            {/* Pokemon image — always visible */}
+            <motion.img
+              key="image"
+              src={pokemon.image_url}
+              alt="Who's that Pokémon?"
+              className="w-48 h-48 md:w-64 md:h-64 object-contain"
+              draggable={false}
+            />
           </motion.div>
         )}
       </AnimatePresence>
