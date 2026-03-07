@@ -1,34 +1,35 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { Zap, Sparkles, CheckCircle2, XCircle, Eye } from 'lucide-react'
 
 const configs = {
   correct5: {
     bg: 'bg-green-400',
     border: 'border-green-300',
-    icon: '⚡',
+    Icon: Zap,
     label: (name) => `Correct! It's ${name}! +5 pts`,
   },
   correct3: {
     bg: 'bg-green-500',
     border: 'border-green-400',
-    icon: '🎉',
+    Icon: Sparkles,
     label: (name) => `Correct! It's ${name}! +3 pts`,
   },
   correct1: {
     bg: 'bg-green-600',
     border: 'border-green-500',
-    icon: '✅',
+    Icon: CheckCircle2,
     label: (name) => `Correct! It's ${name}! +1 pt`,
   },
   wrong: {
     bg: 'bg-red-500',
     border: 'border-red-400',
-    icon: '😅',
+    Icon: XCircle,
     label: (name) => `It's ${name}!`,
   },
   skipped: {
     bg: 'bg-poke-dark-blue',
     border: 'border-poke-blue',
-    icon: '👀',
+    Icon: Eye,
     label: (name) => `It was ${name}!`,
   },
 }
@@ -51,7 +52,7 @@ export default function FeedbackMessage({ feedback, pokemonName }) {
             font-nunito font-800 text-base md:text-xl text-white w-full justify-center text-center
           `}
         >
-          <span className="text-3xl">{cfg.icon}</span>
+          <cfg.Icon className="w-7 h-7 shrink-0" />
           <span>{cfg.label(pokemonName)}</span>
         </motion.div>
       )}

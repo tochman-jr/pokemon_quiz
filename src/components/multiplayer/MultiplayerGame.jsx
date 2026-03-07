@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Star, Zap } from 'lucide-react'
 import PokemonImage from '../PokemonImage'
 import FeedbackMessage from '../FeedbackMessage'
 
@@ -47,9 +48,12 @@ export default function MultiplayerGame({
             className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-nunito font-700
               ${p.name === playerName ? 'bg-poke-yellow text-poke-navy' : 'bg-poke-dark-blue text-white border border-poke-blue/30'}`}
           >
-            <span>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bangers text-xs shrink-0
+              ${ i === 0 ? 'bg-yellow-400 text-yellow-900' : i === 1 ? 'bg-gray-300 text-gray-700' : i === 2 ? 'bg-amber-600 text-white' : 'bg-poke-navy text-blue-300' }`}>
+              {i + 1}
+            </span>
             <span>{p.name}</span>
-            <span className="font-bangers text-base">⭐{p.points ?? 0}</span>
+            <span className="font-bangers text-base flex items-center gap-0.5"><Star className="w-3 h-3 fill-current" />{p.points ?? 0}</span>
           </div>
         ))}
       </div>
@@ -78,7 +82,7 @@ export default function MultiplayerGame({
             </div>
           )}
           <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide uppercase shrink-0">
-            {showSilhouette ? '⭐5 (first)' : '⭐3 (first)'}
+            <span className="inline-flex items-center gap-0.5"><Star className="w-3 h-3 text-poke-yellow fill-poke-yellow" />{showSilhouette ? '5 (first)' : '3 (first)'}</span>
           </p>
         </div>
 
@@ -94,7 +98,7 @@ export default function MultiplayerGame({
               exit={{ opacity: 0 }}
               className="mt-4 text-center font-nunito font-700 text-green-300 text-sm"
             >
-              ⚡ {firstCorrect} answered first!
+              <span className="inline-flex items-center gap-1"><Zap className="w-4 h-4 text-yellow-300" /> {firstCorrect} answered first!</span>
             </motion.div>
           )}
         </AnimatePresence>

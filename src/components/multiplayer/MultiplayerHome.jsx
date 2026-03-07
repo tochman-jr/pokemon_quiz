@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Gamepad2, Link2 } from 'lucide-react'
 
 export default function MultiplayerHome({ onCreate, onJoin, onBack }) {
   const [mode, setMode]       = useState(null) // 'create' | 'join'
@@ -30,15 +31,15 @@ export default function MultiplayerHome({ onCreate, onJoin, onBack }) {
         <div className="flex flex-col gap-4 w-full">
           <button
             onClick={() => setMode('create')}
-            className="font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy py-4 rounded-2xl shadow-[0_5px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_3px_0_#C7A008] transition-all"
+            className="font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy py-4 rounded-2xl shadow-[0_5px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_3px_0_#C7A008] transition-all flex items-center justify-center gap-3"
           >
-            🎮 CREATE ROOM
+            <Gamepad2 className="w-6 h-6" /> CREATE ROOM
           </button>
           <button
             onClick={() => setMode('join')}
-            className="font-bangers text-2xl tracking-widest bg-poke-blue text-white py-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] transition-all"
+            className="font-bangers text-2xl tracking-widest bg-poke-blue text-white py-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] transition-all flex items-center justify-center gap-3"
           >
-            🔗 JOIN ROOM
+            <Link2 className="w-6 h-6" /> JOIN ROOM
           </button>
           <button
             onClick={onBack}

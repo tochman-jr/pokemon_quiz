@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Flame, CheckCircle2, List } from 'lucide-react'
 
 export default function Header({ score, streak }) {
   return (
@@ -32,14 +33,14 @@ export default function Header({ score, streak }) {
             animate={{ scale: 1, opacity: 1 }}
             className="flex items-center gap-1 bg-orange-500 text-white font-nunito font-900 text-xs md:text-sm px-2 md:px-3 py-1 rounded-full"
           >
-            🔥 {streak}
+            <Flame className="w-3.5 h-3.5" /> {streak}
           </motion.div>
         )}
         <div className="flex items-center gap-1 bg-poke-blue text-white font-nunito font-700 text-xs md:text-sm px-3 md:px-4 py-1 rounded-full">
-          ✅ {score.correct}
+          <CheckCircle2 className="w-3.5 h-3.5" /> {score.correct}
         </div>
         <div className="flex items-center gap-1 bg-poke-dark-blue text-white font-nunito font-700 text-xs md:text-sm px-3 md:px-4 py-1 rounded-full">
-          📋 {score.total}
+          <List className="w-3.5 h-3.5" /> {score.total}
         </div>
       </motion.div>
     </header>

@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion'
+import FloatingSilhouettes from './FloatingSilhouettes'
 
 export default function StartScreen({ onStart, onBack }) {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 px-6 text-center">
+    <div className="relative flex flex-col items-center justify-center flex-1 px-6 text-center overflow-hidden w-full">
+      <FloatingSilhouettes />
       {/* Pokeball decoration */}
       <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 80, delay: 0.1 }}
-        className="relative mb-8 select-none"
+        className="relative z-10 mb-8 select-none"
       >
         <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-8 border-poke-navy bg-white overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative">
           {/* Top half */}
@@ -25,7 +27,7 @@ export default function StartScreen({ onStart, onBack }) {
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 100, delay: 0.25 }}
-        className="font-bangers text-5xl sm:text-6xl md:text-8xl text-poke-yellow drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] tracking-widest mb-2"
+        className="relative z-10 font-bangers text-5xl sm:text-6xl md:text-8xl text-poke-yellow drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] tracking-widest mb-2"
       >
         WHO'S THAT
       </motion.h1>
@@ -33,7 +35,7 @@ export default function StartScreen({ onStart, onBack }) {
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 100, delay: 0.35 }}
-        className="font-bangers text-3xl sm:text-4xl md:text-6xl text-white tracking-widest mb-6"
+        className="relative z-10 font-bangers text-3xl sm:text-4xl md:text-6xl text-white tracking-widest mb-6"
       >
         POKÉMON?
       </motion.h2>
@@ -42,7 +44,7 @@ export default function StartScreen({ onStart, onBack }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="font-nunito text-blue-200 text-lg max-w-sm mb-10"
+        className="relative z-10 font-nunito text-blue-200 text-lg max-w-sm mb-10"
       >
         Identify all <span className="text-poke-yellow font-bold">151</span> original Pokémon from their silhouette. How many do you know?
       </motion.p>
@@ -54,7 +56,7 @@ export default function StartScreen({ onStart, onBack }) {
         whileHover={{ scale: 1.07 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="font-bangers text-3xl tracking-widest bg-poke-yellow text-poke-navy px-14 py-4 rounded-2xl shadow-[0_6px_0_#C7A008] hover:shadow-[0_3px_0_#C7A008] hover:translate-y-[3px] transition-all duration-100"
+        className="relative z-10 font-bangers text-3xl tracking-widest bg-poke-yellow text-poke-navy px-14 py-4 rounded-2xl shadow-[0_6px_0_#C7A008] hover:shadow-[0_3px_0_#C7A008] hover:translate-y-[3px] transition-all duration-100"
       >
         START QUIZ!
       </motion.button>
@@ -65,7 +67,7 @@ export default function StartScreen({ onStart, onBack }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
           onClick={onBack}
-          className="font-nunito text-blue-300 text-sm mt-4 hover:text-white transition-colors"
+          className="relative z-10 font-nunito text-blue-300 text-sm mt-4 hover:text-white transition-colors"
         >
           ← Back to menu
         </motion.button>

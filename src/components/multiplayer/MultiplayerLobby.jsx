@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { User } from 'lucide-react'
 
 export default function MultiplayerLobby({ roomCode, players, isHost, onStart }) {
   return (
@@ -26,7 +27,7 @@ export default function MultiplayerLobby({ roomCode, players, isHost, onStart })
             key={p.name}
             className="flex items-center gap-3 bg-poke-navy/60 rounded-sm px-4 py-2"
           >
-            <span className="text-lg">👤</span>
+            <User className="w-4 h-4 text-blue-300 shrink-0" />
             <span className="font-nunito font-700 text-white">{p.name}</span>
           </div>
         ))}

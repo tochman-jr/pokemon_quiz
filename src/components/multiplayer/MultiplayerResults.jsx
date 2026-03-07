@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
+import { Star } from 'lucide-react'
 
 export default function MultiplayerResults({ players, playerName, onPlayAgain }) {
   const sorted = [...players].sort((a, b) => (b.points ?? 0) - (a.points ?? 0))
-  const medals = ['🥇', '🥈', '🥉']
 
   return (
     <motion.div
@@ -24,9 +24,12 @@ export default function MultiplayerResults({ players, playerName, onPlayAgain })
                 ? 'bg-poke-yellow text-poke-navy'
                 : 'bg-poke-dark-blue text-white border border-poke-blue/30'}`}
           >
-            <span className="text-xl md:text-2xl">{medals[i] ?? `#${i + 1}`}</span>
+            <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bangers text-sm shrink-0
+              ${ i === 0 ? 'bg-yellow-400 text-yellow-900' : i === 1 ? 'bg-gray-300 text-gray-700' : i === 2 ? 'bg-amber-600 text-white' : 'bg-poke-navy text-blue-300' }`}>
+              {i + 1}
+            </span>
             <span className="font-nunito font-800 text-base md:text-lg flex-1 min-w-0 truncate">{p.name}</span>
-            <span className="font-bangers text-xl md:text-2xl">⭐ {p.points ?? 0}</span>
+            <span className="font-bangers text-xl md:text-2xl flex items-center gap-1"><Star className="w-4 h-4 fill-current" /> {p.points ?? 0}</span>
             <span className="font-nunito text-xs opacity-60 w-full sm:w-auto">
               {p.correct ?? 0}/{p.total ?? 0} correct
             </span>

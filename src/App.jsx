@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Gamepad2, Users, AlertTriangle } from 'lucide-react'
 import { useQuiz } from './hooks/useQuiz'
 import { useMultiplayer } from './hooks/useMultiplayer'
 import Header from './components/Header'
 import StartScreen from './components/StartScreen'
 import QuizGame from './components/QuizGame'
+import FloatingSilhouettes from './components/FloatingSilhouettes'
 import MultiplayerHome from './components/multiplayer/MultiplayerHome'
 import MultiplayerLobby from './components/multiplayer/MultiplayerLobby'
 import MultiplayerGame from './components/multiplayer/MultiplayerGame'
@@ -49,20 +51,21 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-6 px-6 py-10 text-center"
+              className="relative flex flex-col items-center justify-center gap-6 px-6 py-10 text-center w-full min-h-[calc(100vh-64px)] overflow-hidden"
             >
-              <h1 className="font-bangers text-5xl text-poke-yellow tracking-widest">WHO'S THAT POKÉMON?</h1>
+              <FloatingSilhouettes />
+              <h1 className="font-bangers text-5xl text-poke-yellow tracking-widest relative z-10">WHO'S THAT POKÉMON?</h1>
               <button
                 onClick={() => setMode('solo')}
-                className="font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy px-12 py-4 rounded-2xl shadow-[0_5px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_3px_0_#C7A008] transition-all w-64"
+                className="relative z-10 font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy px-12 py-4 rounded-2xl shadow-[0_5px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_3px_0_#C7A008] transition-all w-64 flex items-center justify-center gap-3"
               >
-                🎮 SOLO
+                <Gamepad2 className="w-6 h-6" /> SOLO
               </button>
               <button
                 onClick={() => setMode('multi')}
-                className="font-bangers text-2xl tracking-widest bg-poke-blue text-white px-12 py-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] transition-all w-64"
+                className="relative z-10 font-bangers text-2xl tracking-widest bg-poke-blue text-white px-12 py-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] transition-all w-64 flex items-center justify-center gap-3"
               >
-                👥 MULTIPLAYER
+                <Users className="w-6 h-6" /> MULTIPLAYER
               </button>
             </motion.div>
           </AnimatePresence>
@@ -79,7 +82,7 @@ export default function App() {
             )}
             {error && !loading && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4 p-8 bg-poke-dark-blue rounded-3xl border border-red-500/40 max-w-sm text-center mx-4">
-                <span className="text-5xl">⚠️</span>
+                <AlertTriangle className="w-12 h-12 text-yellow-400" />
                 <p className="font-nunito text-white font-700 text-lg">Something went wrong</p>
                 <p className="font-nunito text-blue-300 text-sm">{error}</p>
                 <button onClick={reloadPokemon} className="font-bangers text-xl tracking-widest bg-poke-yellow text-poke-navy px-8 py-2 rounded-sm">TRY AGAIN</button>

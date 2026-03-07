@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Star, Eye } from 'lucide-react'
 import PokemonImage from './PokemonImage'
 import AnswerForm from './AnswerForm'
 import FeedbackMessage from './FeedbackMessage'
@@ -37,7 +38,11 @@ export default function QuizGame({
       >
         {/* Hint text */}
         <p className="font-nunito text-blue-300 text-xs md:text-sm text-center mb-4 font-600 tracking-wide uppercase">
-          {revealed ? pokemon?.name : showSilhouette ? `Who's that Pokémon? ⭐ ${pointsAvailable} pts` : `Who's that Pokémon? ⭐ ${pointsAvailable} pt`}
+          {revealed ? pokemon?.name : (
+            <span className="inline-flex items-center gap-1">
+              Who&apos;s that Pokémon? <Star className="w-3 h-3 text-poke-yellow fill-poke-yellow" /> {pointsAvailable} {pointsAvailable === 1 ? 'pt' : 'pts'}
+            </span>
+          )}
         </p>
 
         {/* Pokemon image */}
@@ -48,9 +53,9 @@ export default function QuizGame({
           <div className="flex justify-center mt-4">
             <button
               onClick={onReveal}
-              className="font-nunito font-700 text-sm text-blue-300 border border-blue-400/40 rounded-sm px-4 py-2 hover:bg-poke-blue/20 transition-colors"
+              className="font-nunito font-700 text-sm text-blue-300 border border-blue-400/40 rounded-sm px-4 py-2 hover:bg-poke-blue/20 transition-colors flex items-center gap-2"
             >
-              👁 Reveal image (1 pt)
+              <Eye className="w-4 h-4" /> Reveal image (1 pt)
             </button>
           </div>
         )}
