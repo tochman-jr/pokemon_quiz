@@ -1,26 +1,20 @@
 /**
  * process-images.js
  *
- * Downloads all Pokémon images from Supabase storage, removes the white
- * background using ImageMagick, re-uploads as transparent PNG, and updates
- * the image_url in the database.
- *
- * Requirements:
- *   - ImageMagick 7+ installed (https://imagemagick.org)
- *     Verify with: magick --version
- *   - .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+ * Downloads JPG Pokémon images from Supabase storage, removes the white
+ * background using jimp (pure JS — no native deps), re-uploads as transparent
+ * PNG, and updates image_url in the database.
  *
  * Usage:
- *   node scripts/process-images.js
+ *   node scripts/process-images.js          # skip PNGs already in bucket
+ *   node scripts/process-images.js --force  # re-process and overwrite all
  */
 
-import { execSync } from 'child_process'
-import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'fs'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { createClient } from '@supabase/supabase-js'
+import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { createClient } from '@supabase/supabase-js'
+import Jimp from 'jimp'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const envPath = resolve(__dirname, '../.env')
@@ -43,82 +37,130 @@ try {
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 const BUCKET = 'pokemon-images'
+const FUZZ = 30 // color tolerance for near-white pixels (0–255)
+const FORCE = process.argv.includes('--force')
 
-// Detect ImageMagick command (IM7 uses "magick", IM6 uses "convert")
-function getMagickCmd() {
-  try {
-    execSync('magick --version', { stdio: 'ignore' })
-    return 'magick'
-  } catch {
-    try {
-      execSync('convert --version', { stdio: 'ignore' })
-      return 'convert'
-    } catch {
-      console.error('❌ ImageMagick not found. Install from https://imagemagick.org')
-      process.exit(1)
+/**
+ * BFS flood-fill from the four corners of the image, making white/near-white
+ * connected pixels fully transparent. Returns a PNG Buffer.
+ */
+async function removeWhiteBackground(jpgBuffer) {
+  const image = await Jimp.read(jpgBuffer)
+  const width = image.getWidth()
+  const height = image.getHeight()
+  const visited = new Uint8Array(width * height)
+
+  function isWhitish(x, y) {
+    const { r, g, b } = Jimp.intToRGBA(image.getPixelColor(x, y))
+    return r >= 255 - FUZZ && g >= 255 - FUZZ && b >= 255 - FUZZ
+  }
+
+  // Seed the fill from all four corners
+  const stack = [
+    [0, 0],
+    [width - 1, 0],
+    [0, height - 1],
+    [width - 1, height - 1],
+  ]
+  for (const [sx, sy] of stack) {
+    visited[sy * width + sx] = 1
+  }
+
+  while (stack.length > 0) {
+    const [x, y] = stack.pop()
+    if (!isWhitish(x, y)) continue
+
+    // Set pixel fully transparent (RGBA: 0,0,0,0)
+    image.setPixelColor(0x00000000, x, y)
+
+    for (const [nx, ny] of [
+      [x + 1, y],
+      [x - 1, y],
+      [x, y + 1],
+      [x, y - 1],
+    ]) {
+      if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
+      const idx = ny * width + nx
+      if (!visited[idx]) {
+        visited[idx] = 1
+        stack.push([nx, ny])
+      }
     }
   }
+
+  return image.getBufferAsync(Jimp.MIME_PNG)
+}
+
+/** Fetch all files in the bucket, handling Supabase's 100-item page limit. */
+async function listAllFiles() {
+  const allFiles = []
+  const PAGE = 1000
+  let offset = 0
+  while (true) {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .list('', { limit: PAGE, offset })
+    if (error) throw new Error(`Could not list bucket: ${error.message}`)
+    if (!data || data.length === 0) break
+    allFiles.push(...data)
+    if (data.length < PAGE) break
+    offset += PAGE
+  }
+  return allFiles
 }
 
 async function processImages() {
-  const magick = getMagickCmd()
-  console.log(`✅ Using ImageMagick command: ${magick}`)
-
-  // List all files in bucket
-  const { data: files, error: listErr } = await supabase.storage.from(BUCKET).list()
-  if (listErr) throw new Error(`Could not list bucket: ${listErr.message}`)
-  if (!files || files.length === 0) {
+  const files = await listAllFiles()
+  if (files.length === 0) {
     console.error('No files found in bucket. Run "npm run scrape" first.')
     process.exit(1)
   }
 
-  // Only process JPG files (skip already-processed PNGs)
   const jpgFiles = files.filter((f) => f.name.endsWith('.jpg'))
-  console.log(`📂 Found ${jpgFiles.length} JPG images to process\n`)
+  const existingPngs = new Set(files.filter((f) => f.name.endsWith('.png')).map((f) => f.name))
+
+  console.log(`📂 Found ${jpgFiles.length} JPG(s) and ${existingPngs.size} existing PNG(s) in bucket`)
+  if (FORCE) {
+    console.log(`   --force: re-processing and overwriting all PNGs.\n`)
+  } else {
+    console.log(`   Skipping ${existingPngs.size} already-uploaded PNG(s). Use --force to re-process all.\n`)
+  }
 
   let processed = 0
+  let skipped = 0
   let failed = 0
 
   for (const file of jpgFiles) {
-    const jpgPath = join(tmpdir(), `pokemon-input-${file.name}`)
     const pngName = file.name.replace('.jpg', '.png')
-    const pngPath = join(tmpdir(), `pokemon-output-${pngName}`)
+
+    // Skip if PNG already exists and we're not forcing a re-run
+    if (!FORCE && existingPngs.has(pngName)) {
+      skipped++
+      continue
+    }
 
     try {
-      // 1. Download JPG from storage
+      // 1. Download original JPG from storage
       const { data: fileData, error: dlErr } = await supabase.storage
         .from(BUCKET)
         .download(file.name)
       if (dlErr) throw new Error(`Download failed: ${dlErr.message}`)
 
-      writeFileSync(jpgPath, Buffer.from(await fileData.arrayBuffer()))
+      const jpgBuffer = Buffer.from(await fileData.arrayBuffer())
 
-      // 2. Remove white background with ImageMagick
-      //    -fuzz 8%: allows near-white pixels to also become transparent
-      //    -alpha set: enable alpha channel
-      //    flood-fill from all four corners for clean edges
-      execSync(
-        `${magick} "${jpgPath}" -alpha set ` +
-          `-fuzz 8% -draw "color 0,0 floodfill" ` +
-          `-fuzz 8% -draw "color %[fx:w-1],0 floodfill" ` +
-          `-fuzz 8% -draw "color 0,%[fx:h-1] floodfill" ` +
-          `-fuzz 8% -draw "color %[fx:w-1],%[fx:h-1] floodfill" ` +
-          `-trim +repage "${pngPath}"`,
-        { stdio: 'pipe' }
-      )
+      // 2. Remove white background → transparent PNG
+      const pngBuffer = await removeWhiteBackground(jpgBuffer)
 
-      // 3. Upload PNG to storage
-      const pngBuffer = readFileSync(pngPath)
+      // 3. Upload PNG (upsert overwrites any existing bad version)
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
         .upload(pngName, pngBuffer, { contentType: 'image/png', upsert: true })
       if (upErr) throw new Error(`Upload failed: ${upErr.message}`)
 
-      // 4. Get public URL for the PNG
+      // 4. Get public URL
       const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(pngName)
 
-      // 5. Update image_url in database
-      //    Extract pokemon number from filename e.g. "001-bulbasaur.jpg" → 1
+      // 5. Update DB image_url (filename pattern: "001-bulbasaur.jpg" → number 1)
       const numberMatch = file.name.match(/^(\d+)-/)
       if (numberMatch) {
         const number = parseInt(numberMatch[1], 10)
@@ -130,19 +172,16 @@ async function processImages() {
       }
 
       processed++
-      process.stdout.write(`\r  ✅ ${processed}/${jpgFiles.length} done (latest: ${pngName})`)
+      process.stdout.write(`\r  ✅ ${processed} processed (latest: ${pngName})`)
     } catch (err) {
       failed++
       console.warn(`\n  ⚠️  ${file.name}: ${err.message}`)
-    } finally {
-      if (existsSync(jpgPath)) unlinkSync(jpgPath)
-      if (existsSync(pngPath)) unlinkSync(pngPath)
     }
   }
 
-  console.log(`\n\n🎉 Done! ${processed} images processed, ${failed} failed.`)
-  console.log(`   Images stored in bucket "${BUCKET}" as transparent PNGs.`)
-  console.log(`   Database image_url fields updated to point to the new PNGs.`)
+  console.log(
+    `\n\n🎉 Done! ${processed} processed, ${skipped} skipped (already PNG), ${failed} failed.`
+  )
 }
 
 processImages().catch((err) => {

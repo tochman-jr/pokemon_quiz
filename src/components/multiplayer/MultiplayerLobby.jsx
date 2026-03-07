@@ -24,7 +24,7 @@ export default function MultiplayerLobby({ roomCode, players, isHost, onStart })
         {players.map((p) => (
           <div
             key={p.name}
-            className="flex items-center gap-3 bg-poke-navy/60 rounded-xl px-4 py-2"
+            className="flex items-center gap-3 bg-poke-navy/60 rounded-sm px-4 py-2"
           >
             <span className="text-lg">👤</span>
             <span className="font-nunito font-700 text-white">{p.name}</span>

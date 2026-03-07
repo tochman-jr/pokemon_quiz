@@ -48,7 +48,7 @@ export default function QuizGame({
           <div className="flex justify-center mt-4">
             <button
               onClick={onReveal}
-              className="font-nunito font-700 text-sm text-blue-300 border border-blue-400/40 rounded-xl px-4 py-2 hover:bg-poke-blue/20 transition-colors"
+              className="font-nunito font-700 text-sm text-blue-300 border border-blue-400/40 rounded-sm px-4 py-2 hover:bg-poke-blue/20 transition-colors"
             >
               👁 Reveal image (1 pt)
             </button>

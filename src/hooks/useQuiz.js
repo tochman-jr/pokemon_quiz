@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { isAnswerCorrect } from '../lib/fuzzyMatch'
 
 const FEEDBACK_DURATION = 2000 // ms before advancing to next pokemon
 
@@ -61,13 +62,7 @@ export function useQuiz() {
     (userAnswer) => {
       if (feedback !== null || !pokemon) return // already answered
 
-      const normalise = (str) =>
-        str
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]/g, '')
-
-      const isCorrect = normalise(userAnswer) === normalise(pokemon.name)
+      const isCorrect = isAnswerCorrect(userAnswer, pokemon.name)
 
       const pointsEarned = isCorrect ? (phase === 'silhouette' ? 3 : 1) : 0
       setFeedback(isCorrect ? (phase === 'silhouette' ? 'correct3' : 'correct1') : 'wrong')
@@ -83,7 +78,7 @@ export function useQuiz() {
         nextPokemon()
       }, FEEDBACK_DURATION)
     },
-    [feedback, pokemon, nextPokemon]
+    [feedback, pokemon, phase, nextPokemon]
   )
 
   const revealImage = useCallback(() => {

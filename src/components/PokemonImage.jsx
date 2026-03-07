@@ -56,7 +56,7 @@ export default function PokemonImage({ pokemon, showSilhouette }) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="absolute top-0 right-0 font-nunito font-800 text-xs bg-poke-navy text-poke-yellow px-2 py-1 rounded-lg z-20"
+            className="absolute top-0 right-0 font-nunito font-800 text-xs bg-poke-navy text-poke-yellow px-2 py-1 rounded-sm z-20"
           >
             #{String(pokemon.number).padStart(3, '0')}
           </motion.span>

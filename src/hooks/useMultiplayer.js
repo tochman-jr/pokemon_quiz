@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { isAnswerCorrect } from '../lib/fuzzyMatch'
 
 const SILHOUETTE_DURATION = 5000  // ms silhouette is shown before image auto-reveals
 const FEEDBACK_DURATION   = 3000  // ms feedback is shown before next question
-
-const normalise = (str) =>
-  str.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
 
 export function useMultiplayer() {
   // ── lobby state ──────────────────────────────────────────────────────────
@@ -226,7 +224,7 @@ export function useMultiplayer() {
       if (answered || !pokemon) return
       setAnswered(true)
 
-      const isCorrect = normalise(userAnswer) === normalise(pokemon.name)
+      const isCorrect = isAnswerCorrect(userAnswer, pokemon.name)
 
       if (isCorrect) {
         const alreadyAnswered = firstCorrect !== null

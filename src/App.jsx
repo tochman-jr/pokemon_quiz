@@ -82,7 +82,7 @@ export default function App() {
                 <span className="text-5xl">⚠️</span>
                 <p className="font-nunito text-white font-700 text-lg">Something went wrong</p>
                 <p className="font-nunito text-blue-300 text-sm">{error}</p>
-                <button onClick={reloadPokemon} className="font-bangers text-xl tracking-widest bg-poke-yellow text-poke-navy px-8 py-2 rounded-xl">TRY AGAIN</button>
+                <button onClick={reloadPokemon} className="font-bangers text-xl tracking-widest bg-poke-yellow text-poke-navy px-8 py-2 rounded-sm">TRY AGAIN</button>
               </motion.div>
             )}
             {!loading && !error && (

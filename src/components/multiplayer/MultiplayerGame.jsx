@@ -150,7 +150,7 @@ export default function MultiplayerGame({
           <div className="flex justify-center mt-3">
             <button
               onClick={onReveal}
-              className="font-nunito text-xs text-blue-400 border border-blue-400/30 rounded-xl px-3 py-1 hover:bg-poke-blue/20 transition-colors"
+              className="font-nunito text-xs text-blue-400 border border-blue-400/30 rounded-sm px-3 py-1 hover:bg-poke-blue/20 transition-colors"
             >
               👁 Reveal image now
             </button>
