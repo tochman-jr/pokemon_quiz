@@ -13,6 +13,8 @@ export default function App() {
     setAnswer,
     feedback,
     revealed,
+    phase,
+    revealImage,
     score,
     accuracy,
     streak,
@@ -90,6 +92,8 @@ export default function App() {
                   setAnswer={setAnswer}
                   feedback={feedback}
                   revealed={revealed}
+                  phase={phase}
+                  onReveal={revealImage}
                   score={score}
                   accuracy={accuracy}
                   streak={streak}

@@ -10,12 +10,17 @@ export default function QuizGame({
   setAnswer,
   feedback,
   revealed,
+  phase,
+  onReveal,
   score,
   accuracy,
   streak,
   onSubmit,
   onSkip,
 }) {
+  const showSilhouette = phase === 'silhouette' && !revealed
+  const pointsAvailable = phase === 'silhouette' ? 3 : 1
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -32,11 +37,23 @@ export default function QuizGame({
       >
         {/* Hint text */}
         <p className="font-nunito text-blue-300 text-sm text-center mb-4 font-600 tracking-wide uppercase">
-          {revealed ? pokemon?.name : "Who's that Pokémon?"}
+          {revealed ? pokemon?.name : showSilhouette ? `Who's that Pokémon? ⭐ ${pointsAvailable} pts` : `Who's that Pokémon? ⭐ ${pointsAvailable} pt`}
         </p>
 
         {/* Pokemon image */}
-        <PokemonImage pokemon={pokemon} revealed={revealed} />
+        <PokemonImage pokemon={pokemon} showSilhouette={showSilhouette} />
+
+        {/* Reveal button — only in silhouette phase before answering */}
+        {phase === 'silhouette' && !revealed && feedback === null && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={onReveal}
+              className="font-nunito font-700 text-sm text-blue-300 border border-blue-400/40 rounded-xl px-4 py-2 hover:bg-poke-blue/20 transition-colors"
+            >
+              👁 Reveal image (1 pt)
+            </button>
+          </div>
+        )}
 
         {/* Feedback */}
         <div className="mt-6 min-h-[72px] flex items-center justify-center">

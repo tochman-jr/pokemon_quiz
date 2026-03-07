@@ -11,7 +11,8 @@ export function useQuiz() {
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null) // 'correct' | 'wrong' | null
   const [revealed, setRevealed] = useState(false)
-  const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [score, setScore] = useState({ points: 0, correct: 0, total: 0 })
+  const [phase, setPhase] = useState('silhouette') // 'silhouette' | 'image'
   const [gameStarted, setGameStarted] = useState(false)
   const [streak, setStreak] = useState(0)
 
@@ -31,6 +32,7 @@ export function useQuiz() {
       const shuffled = [...data].sort(() => Math.random() - 0.5)
       setQueue(shuffled)
       setPokemon(shuffled[0])
+      setPhase('silhouette')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -52,6 +54,7 @@ export function useQuiz() {
     setAnswer('')
     setFeedback(null)
     setRevealed(false)
+    setPhase('silhouette')
   }, [])
 
   const submitAnswer = useCallback(
@@ -66,9 +69,11 @@ export function useQuiz() {
 
       const isCorrect = normalise(userAnswer) === normalise(pokemon.name)
 
-      setFeedback(isCorrect ? 'correct' : 'wrong')
+      const pointsEarned = isCorrect ? (phase === 'silhouette' ? 3 : 1) : 0
+      setFeedback(isCorrect ? (phase === 'silhouette' ? 'correct3' : 'correct1') : 'wrong')
       setRevealed(true)
       setScore((prev) => ({
+        points: prev.points + pointsEarned,
         correct: prev.correct + (isCorrect ? 1 : 0),
         total: prev.total + 1,
       }))
@@ -80,6 +85,10 @@ export function useQuiz() {
     },
     [feedback, pokemon, nextPokemon]
   )
+
+  const revealImage = useCallback(() => {
+    setPhase('image')
+  }, [])
 
   const skipPokemon = useCallback(() => {
     if (feedback !== null) return
@@ -93,8 +102,9 @@ export function useQuiz() {
   }, [feedback, nextPokemon])
 
   const startGame = useCallback(() => {
-    setScore({ correct: 0, total: 0 })
+    setScore({ points: 0, correct: 0, total: 0 })
     setStreak(0)
+    setPhase('silhouette')
     setGameStarted(true)
   }, [])
 
@@ -113,6 +123,8 @@ export function useQuiz() {
     setAnswer,
     feedback,
     revealed,
+    phase,
+    revealImage,
     score,
     accuracy,
     streak,
