@@ -141,6 +141,7 @@ export default function App() {
                 onSubmit={multi.submitAnswer}
                 onReveal={multi.revealImage}
                 onSkip={multi.skipQuestion}
+                onQuit={multi.quitGame}
                 questionIndex={multi.questionIndex}
               />
             )}
@@ -149,7 +150,10 @@ export default function App() {
                 key="mpresults"
                 players={multi.players}
                 playerName={multi.playerName}
+                gameHistory={multi.gameHistory}
+                isHost={multi.isHost}
                 onPlayAgain={() => multi.setScreen('lobby')}
+                onBackToMenu={() => setMode(null)}
               />
             )}
           </AnimatePresence>

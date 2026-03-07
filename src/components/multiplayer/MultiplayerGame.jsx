@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Zap, Eye } from 'lucide-react'
+import { Star, Zap, Eye, SkipForward, LogOut } from 'lucide-react'
 import PokemonImage from '../PokemonImage'
 import FeedbackMessage from '../FeedbackMessage'
 
@@ -19,6 +19,7 @@ export default function MultiplayerGame({
   onSubmit,
   onReveal,
   onSkip,
+  onQuit,
   questionIndex,
 }) {
   const inputRef = useRef(null)
@@ -138,15 +139,23 @@ export default function MultiplayerGame({
           </p>
         )}
 
-        {/* Skip always visible for host regardless of whether they answered */}
+        {/* Skip / Quit buttons always visible for host regardless of whether they answered */}
         {isHost && (
           <div className="flex gap-2 mt-3">
             <button
               type="button"
               onClick={onSkip}
-              className="flex-1 font-bangers text-xl tracking-widest bg-poke-dark-blue text-blue-300 border border-poke-blue/40 py-2 rounded-2xl hover:bg-poke-blue/20 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 font-bangers text-xl tracking-widest bg-poke-dark-blue text-blue-300 border border-poke-blue/40 py-2 rounded-2xl hover:bg-poke-blue/20 transition-colors"
             >
-              Skip
+              <SkipForward className="w-4 h-4" /> Skip
+            </button>
+            <button
+              type="button"
+              onClick={onQuit}
+              className="flex items-center justify-center gap-1 font-bangers text-lg tracking-widest bg-red-950/60 text-red-400 border border-red-800/40 px-4 py-2 rounded-2xl hover:bg-red-900/40 transition-colors"
+              title="End game now"
+            >
+              <LogOut className="w-4 h-4" /> Quit
             </button>
           </div>
         )}

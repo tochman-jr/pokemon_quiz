@@ -34,9 +34,16 @@ export function useMultiplayer() {
 
   // Refs that always hold the latest mutable game values so stale closures
   // (e.g. inside joinChannel event handlers) can still read current state.
-  const questionIndexRef = useRef(0)
-  const allPokemonRef    = useRef([])
-  const advanceRef       = useRef(null) // set at render time below
+  const questionIndexRef  = useRef(0)
+  const allPokemonRef     = useRef([])
+  const advanceRef        = useRef(null) // set at render time below
+
+  // ── per-question history (for results screen) ─────────────────────────────
+  // { pokemon, winnerName, winnerPoints, winnerPhase }
+  const historyRef       = useRef([])
+  const currentWinnerRef = useRef({ name: null, points: 0, phase: null })
+  const hasStartedRef    = useRef(false)
+  const [gameHistory, setGameHistory] = useState([])
 
   // ── helpers ───────────────────────────────────────────────────────────────
   const broadcast = useCallback((event, payload) => {
@@ -93,8 +100,18 @@ export function useMultiplayer() {
   // own broadcast back to itself.
   const advanceQuestion = useCallback(
     (currentIndex, pokemonList) => {
+      // Save completed question to history
+      historyRef.current.push({
+        pokemon:      pokemonList[currentIndex],
+        winnerName:   currentWinnerRef.current.name,
+        winnerPoints: currentWinnerRef.current.points,
+        winnerPhase:  currentWinnerRef.current.phase,
+      })
+      currentWinnerRef.current = { name: null, points: 0, phase: null }
+
       const next = currentIndex + 1
       if (next >= pokemonList.length) {
+        setGameHistory([...historyRef.current])
         broadcast('game_over', {})
         setScreen('results')
         return
@@ -145,6 +162,21 @@ export function useMultiplayer() {
         const idx      = payload.index
         const gameList = payload.gameList ?? null // included in Q0 to sync shuffle
 
+        // Save previous question to history (except on the very first question)
+        if (hasStartedRef.current) {
+          const prevPokemon = allPokemonRef.current[questionIndexRef.current]
+          if (prevPokemon) {
+            historyRef.current.push({
+              pokemon:      prevPokemon,
+              winnerName:   currentWinnerRef.current.name,
+              winnerPoints: currentWinnerRef.current.points,
+              winnerPhase:  currentWinnerRef.current.phase,
+            })
+            currentWinnerRef.current = { name: null, points: 0, phase: null }
+          }
+        }
+        hasStartedRef.current = true
+
         if (gameList) {
           // First question: store the host's shuffled list and index into it
           setAllPokemon(gameList)
@@ -170,6 +202,8 @@ export function useMultiplayer() {
 
       // ── broadcast: someone answered correctly ─────────────────────────────
       channel.on('broadcast', { event: 'correct_answer' }, ({ payload }) => {
+        // Track current question winner for history
+        currentWinnerRef.current = { name: payload.name, points: payload.points, phase: payload.phase }
         setFirstCorrect(payload.name)
         setPlayers((prev) =>
           prev.map((p) =>
@@ -197,6 +231,19 @@ export function useMultiplayer() {
 
       // ── broadcast: game over ──────────────────────────────────────────────
       channel.on('broadcast', { event: 'game_over' }, () => {
+        if (!host) {
+          // Save the last question for non-host players
+          const lastPokemon = allPokemonRef.current[questionIndexRef.current]
+          if (lastPokemon) {
+            historyRef.current.push({
+              pokemon:      lastPokemon,
+              winnerName:   currentWinnerRef.current.name,
+              winnerPoints: currentWinnerRef.current.points,
+              winnerPhase:  currentWinnerRef.current.phase,
+            })
+          }
+          setGameHistory([...historyRef.current])
+        }
         setScreen('results')
       })
 
@@ -251,6 +298,12 @@ export function useMultiplayer() {
     if (!isHost || allPokemon.length === 0) return
 
     const shuffled = [...allPokemon].sort(() => Math.random() - 0.5).slice(0, 20)
+
+    // Reset history for new game
+    historyRef.current = []
+    currentWinnerRef.current = { name: null, points: 0, phase: null }
+    hasStartedRef.current = false
+    setGameHistory([])
 
     // Update host state
     setAllPokemon(shuffled)
@@ -335,6 +388,27 @@ export function useMultiplayer() {
     advanceRef.current(questionIndexRef.current, allPokemonRef.current)
   }, [isHost])
 
+  // ── quit game early (host only) ───────────────────────────────────────────
+  const quitGame = useCallback(() => {
+    if (!isHost) return
+    clearTimeout(feedTimerRef.current)
+    clearTimeout(silTimerRef.current)
+    clearInterval(silCountRef.current)
+    // Save current question to history
+    const curPokemon = allPokemonRef.current[questionIndexRef.current]
+    if (curPokemon) {
+      historyRef.current.push({
+        pokemon:      curPokemon,
+        winnerName:   currentWinnerRef.current.name,
+        winnerPoints: currentWinnerRef.current.points,
+        winnerPhase:  currentWinnerRef.current.phase,
+      })
+    }
+    setGameHistory([...historyRef.current])
+    broadcast('game_over', {})
+    setScreen('results')
+  }, [isHost, broadcast])
+
   // ── cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -371,5 +445,8 @@ export function useMultiplayer() {
     submitAnswer,
     revealImage,
     skipQuestion,
+    quitGame,
+    // history for results
+    gameHistory,
   }
 }
