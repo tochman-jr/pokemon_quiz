@@ -14,23 +14,29 @@ export function useMultiplayer() {
   const [players, setPlayers]       = useState([])       // { name, points, correct, total }
 
   // ── game state ────────────────────────────────────────────────────────────
-  const [allPokemon, setAllPokemon]   = useState([])
-  const [pokemon, setPokemon]         = useState(null)
+  const [allPokemon, setAllPokemon]       = useState([])
+  const [pokemon, setPokemon]             = useState(null)
   const [questionIndex, setQuestionIndex] = useState(0)
-  const [phase, setPhase]             = useState('silhouette') // 'silhouette'|'image'
-  const [feedback, setFeedback]       = useState(null)
-  const [answer, setAnswer]           = useState('')
-  const [answered, setAnswered]       = useState(false)   // this player already answered
-  const [firstCorrect, setFirstCorrect] = useState(null)  // name of first correct player
+  const [phase, setPhase]                 = useState('silhouette')
+  const [feedback, setFeedback]           = useState(null)
+  const [answer, setAnswer]               = useState('')
+  const [answered, setAnswered]           = useState(false)
+  const [firstCorrect, setFirstCorrect]   = useState(null)
   const [silhouetteCountdown, setSilhouetteCountdown] = useState(SILHOUETTE_DURATION / 1000)
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState(null)
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState(null)
 
-  const channelRef     = useRef(null)
-  const silTimerRef    = useRef(null)
-  const silCountRef    = useRef(null)
-  const feedTimerRef   = useRef(null)
-  const myScore        = useRef({ points: 0, correct: 0, total: 0 })
+  const channelRef   = useRef(null)
+  const silTimerRef  = useRef(null)
+  const silCountRef  = useRef(null)
+  const feedTimerRef = useRef(null)
+  const myScore      = useRef({ points: 0, correct: 0, total: 0 })
+
+  // Refs that always hold the latest mutable game values so stale closures
+  // (e.g. inside joinChannel event handlers) can still read current state.
+  const questionIndexRef = useRef(0)
+  const allPokemonRef    = useRef([])
+  const advanceRef       = useRef(null) // set at render time below
 
   // ── helpers ───────────────────────────────────────────────────────────────
   const broadcast = useCallback((event, payload) => {
@@ -48,8 +54,8 @@ export function useMultiplayer() {
       .order('number')
       .then(({ data, error: err }) => {
         if (err || !data) return
-        // stable shuffle seeded later by host
         setAllPokemon(data)
+        allPokemonRef.current = data
       })
   }, [])
 
@@ -61,7 +67,7 @@ export function useMultiplayer() {
     setPlayers(list)
   }, [])
 
-  // ── start silhouette countdown (host drives, all clients listen) ──────────
+  // ── start silhouette countdown ────────────────────────────────────────────
   const startSilhouetteTimer = useCallback(() => {
     clearInterval(silCountRef.current)
     clearTimeout(silTimerRef.current)
@@ -82,6 +88,9 @@ export function useMultiplayer() {
   }, [])
 
   // ── advance to next question (host only) ──────────────────────────────────
+  // IMPORTANT: this function must update the HOST's own local state AND
+  // broadcast to other players, because Supabase does not deliver a client's
+  // own broadcast back to itself.
   const advanceQuestion = useCallback(
     (currentIndex, pokemonList) => {
       const next = currentIndex + 1
@@ -90,10 +99,26 @@ export function useMultiplayer() {
         setScreen('results')
         return
       }
+
+      // Update host state directly
+      setPokemon(pokemonList[next])
+      setQuestionIndex(next)
+      questionIndexRef.current = next
+      setAnswered(false)
+      setFeedback(null)
+      setAnswer('')
+      setFirstCorrect(null)
+      startSilhouetteTimer()
+
+      // Notify other players (index only — they already have the game list)
       broadcast('question', { index: next })
     },
-    [broadcast]
+    [broadcast, startSilhouetteTimer]
   )
+
+  // Keep advanceRef pointing to the latest advanceQuestion so stale closures
+  // inside joinChannel can still call the up-to-date version.
+  advanceRef.current = advanceQuestion
 
   // ── subscribe to a room channel ───────────────────────────────────────────
   const joinChannel = useCallback(
@@ -112,13 +137,29 @@ export function useMultiplayer() {
       })
 
       // ── broadcast: host sends question index ─────────────────────────────
+      // The host drives its own state directly in advanceQuestion / startGame,
+      // so only non-host players need to react here.
       channel.on('broadcast', { event: 'question' }, ({ payload }) => {
-        const idx = payload.index
-        setAllPokemon((prev) => {
-          setPokemon(prev[idx])
-          return prev
-        })
+        if (host) return // host manages its own state
+
+        const idx      = payload.index
+        const gameList = payload.gameList ?? null // included in Q0 to sync shuffle
+
+        if (gameList) {
+          // First question: store the host's shuffled list and index into it
+          setAllPokemon(gameList)
+          allPokemonRef.current = gameList
+          setPokemon(gameList[idx])
+        } else {
+          // Subsequent questions: allPokemon is already the game list
+          setAllPokemon((prev) => {
+            setPokemon(prev[idx])
+            return prev
+          })
+        }
+
         setQuestionIndex(idx)
+        questionIndexRef.current = idx
         setAnswered(false)
         setFeedback(null)
         setAnswer('')
@@ -129,9 +170,7 @@ export function useMultiplayer() {
 
       // ── broadcast: someone answered correctly ─────────────────────────────
       channel.on('broadcast', { event: 'correct_answer' }, ({ payload }) => {
-        // payload: { name, points, phase }
         setFirstCorrect(payload.name)
-        // Update that player's score in the list
         setPlayers((prev) =>
           prev.map((p) =>
             p.name === payload.name
@@ -139,6 +178,16 @@ export function useMultiplayer() {
               : { ...p, total: (p.total ?? 0) + 1 }
           )
         )
+
+        // If this client is the host, a NON-HOST player just answered correctly.
+        // (The host never receives its own broadcasts, so this is always from another player.)
+        // Trigger the advance timer so the game progresses.
+        if (host) {
+          clearTimeout(feedTimerRef.current)
+          feedTimerRef.current = setTimeout(() => {
+            advanceRef.current(questionIndexRef.current, allPokemonRef.current)
+          }, FEEDBACK_DURATION)
+        }
       })
 
       // ── broadcast: reveal image (phase change) ────────────────────────────
@@ -151,17 +200,11 @@ export function useMultiplayer() {
         setScreen('results')
       })
 
-      channel
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.track({
-              name,
-              points: 0,
-              correct: 0,
-              total: 0,
-            })
-          }
-        })
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ name, points: 0, correct: 0, total: 0 })
+        }
+      })
 
       channelRef.current = channel
     },
@@ -206,17 +249,23 @@ export function useMultiplayer() {
   // ── start game (host only) ────────────────────────────────────────────────
   const startGame = useCallback(() => {
     if (!isHost || allPokemon.length === 0) return
-    // shuffle using Fisher-Yates
+
     const shuffled = [...allPokemon].sort(() => Math.random() - 0.5).slice(0, 20)
+
+    // Update host state
     setAllPokemon(shuffled)
+    allPokemonRef.current = shuffled
     setQuestionIndex(0)
+    questionIndexRef.current = 0
     setPokemon(shuffled[0])
     setAnswered(false)
     setFeedback(null)
     setFirstCorrect(null)
-    broadcast('question', { index: 0 })
     startSilhouetteTimer()
     setScreen('game')
+
+    // Broadcast Q0 with the full game list so non-host players can sync the shuffle
+    broadcast('question', { index: 0, gameList: shuffled })
   }, [isHost, allPokemon, broadcast, startSilhouetteTimer])
 
   // ── submit answer ─────────────────────────────────────────────────────────
@@ -229,7 +278,6 @@ export function useMultiplayer() {
 
       if (isCorrect) {
         const alreadyAnswered = firstCorrect !== null
-        // First correct gets bonus points
         const basePoints = phase === 'silhouette' ? (alreadyAnswered ? 3 : 5) : (alreadyAnswered ? 1 : 3)
         myScore.current.points  += basePoints
         myScore.current.correct += 1
@@ -239,26 +287,21 @@ export function useMultiplayer() {
           ? (alreadyAnswered ? 'correct3' : 'correct5')
           : (alreadyAnswered ? 'correct1' : 'correct3'))
 
-        // Update own presence score
         channelRef.current?.track({
-          name: playerName,
+          name:    playerName,
           points:  myScore.current.points,
           correct: myScore.current.correct,
           total:   myScore.current.total,
         })
 
-        // Broadcast win to all players
-        broadcast('correct_answer', {
-          name:   playerName,
-          points: basePoints,
-          phase,
-        })
+        broadcast('correct_answer', { name: playerName, points: basePoints, phase })
 
-        // Host advances after feedback delay
+        // Host advances after feedback delay when HOST answers correctly.
+        // (When a non-host answers correctly, the correct_answer handler above handles it.)
         if (isHost) {
           clearTimeout(feedTimerRef.current)
           feedTimerRef.current = setTimeout(() => {
-            advanceQuestion(questionIndex, allPokemon)
+            advanceRef.current(questionIndexRef.current, allPokemonRef.current)
           }, FEEDBACK_DURATION)
         }
       } else {
@@ -274,10 +317,10 @@ export function useMultiplayer() {
 
       setAnswer(userAnswer)
     },
-    [answered, pokemon, phase, firstCorrect, playerName, isHost, questionIndex, allPokemon, broadcast, advanceQuestion]
+    [answered, pokemon, phase, firstCorrect, playerName, isHost, broadcast]
   )
 
-  // ── manual reveal (host or player hint) ──────────────────────────────────
+  // ── manual reveal (host broadcasts, all clients listen) ──────────────────
   const revealImage = useCallback(() => {
     clearTimeout(silTimerRef.current)
     clearInterval(silCountRef.current)
@@ -285,12 +328,12 @@ export function useMultiplayer() {
     if (isHost) broadcast('reveal_image', {})
   }, [isHost, broadcast])
 
-  // ── skip (host only) ──────────────────────────────────────────────────────
+  // ── skip question (host only) ─────────────────────────────────────────────
   const skipQuestion = useCallback(() => {
     if (!isHost) return
     clearTimeout(feedTimerRef.current)
-    advanceQuestion(questionIndex, allPokemon)
-  }, [isHost, questionIndex, allPokemon, advanceQuestion])
+    advanceRef.current(questionIndexRef.current, allPokemonRef.current)
+  }, [isHost])
 
   // ── cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {

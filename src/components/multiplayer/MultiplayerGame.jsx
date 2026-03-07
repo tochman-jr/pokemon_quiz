@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Zap } from 'lucide-react'
+import { Star, Zap, Eye } from 'lucide-react'
 import PokemonImage from '../PokemonImage'
 import FeedbackMessage from '../FeedbackMessage'
 
@@ -123,23 +123,12 @@ export default function MultiplayerGame({
               spellCheck="false"
               className="w-full text-center font-nunito font-700 text-xl text-poke-navy bg-white border-4 border-poke-blue rounded-2xl px-5 py-4 placeholder:text-blue-200 focus:outline-none focus:border-poke-yellow"
             />
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="flex-1 font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy py-3 rounded-2xl shadow-[0_4px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_2px_0_#C7A008] transition-all"
-              >
-                GUESS!
-              </button>
-              {isHost && (
-                <button
-                  type="button"
-                  onClick={onSkip}
-                  className="font-bangers text-xl tracking-widest bg-poke-dark-blue text-blue-300 border border-poke-blue/40 px-4 py-3 rounded-2xl hover:bg-poke-blue/20 transition-colors"
-                >
-                  Skip
-                </button>
-              )}
-            </div>
+            <button
+              type="submit"
+              className="w-full font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy py-3 rounded-2xl shadow-[0_4px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_2px_0_#C7A008] transition-all"
+            >
+              GUESS!
+            </button>
           </form>
         )}
 
@@ -149,14 +138,27 @@ export default function MultiplayerGame({
           </p>
         )}
 
-        {/* Manual reveal button (host, silhouette phase, not yet answered) */}
-        {isHost && showSilhouette && !answered && (
+        {/* Skip always visible for host regardless of whether they answered */}
+        {isHost && (
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              onClick={onSkip}
+              className="flex-1 font-bangers text-xl tracking-widest bg-poke-dark-blue text-blue-300 border border-poke-blue/40 py-2 rounded-2xl hover:bg-poke-blue/20 transition-colors"
+            >
+              Skip
+            </button>
+          </div>
+        )}
+
+        {/* Manual reveal button (host, silhouette phase) */}
+        {isHost && showSilhouette && (
           <div className="flex justify-center mt-3">
             <button
               onClick={onReveal}
-              className="font-nunito text-xs text-blue-400 border border-blue-400/30 rounded-sm px-3 py-1 hover:bg-poke-blue/20 transition-colors"
+              className="font-nunito text-xs text-blue-400 border border-blue-400/30 rounded-sm px-3 py-1 hover:bg-poke-blue/20 transition-colors flex items-center gap-1"
             >
-              👁 Reveal image now
+              <Eye className="w-3 h-3" /> Reveal image now
             </button>
           </div>
         )}
