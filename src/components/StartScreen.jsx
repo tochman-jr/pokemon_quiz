@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
+import { Star, Flame } from 'lucide-react'
 import FloatingSilhouettes from './FloatingSilhouettes'
 
-export default function StartScreen({ onStart, onBack }) {
+export default function StartScreen({ onStart, onBack, bestScore, pool }) {
   return (
     <div className="relative flex flex-col items-center justify-center flex-1 px-6 text-center overflow-hidden w-full">
-      <FloatingSilhouettes />
+      <FloatingSilhouettes pool={pool} />
       {/* Pokeball decoration */}
       <motion.div
         initial={{ y: -60, opacity: 0 }}
@@ -48,6 +49,29 @@ export default function StartScreen({ onStart, onBack }) {
       >
         Identify all <span className="text-poke-yellow font-bold">151</span> original Pokémon from their silhouette. How many do you know?
       </motion.p>
+
+      {/* Best score badges */}
+      {(bestScore?.points > 0 || bestScore?.streak > 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="relative z-10 flex gap-3 mb-6"
+        >
+          {bestScore.points > 0 && (
+            <div className="flex items-center gap-1.5 bg-poke-dark-blue border border-poke-blue/40 rounded-2xl px-4 py-2">
+              <Star className="w-4 h-4 text-poke-yellow fill-poke-yellow" />
+              <span className="font-nunito text-sm text-blue-200">Best: <span className="font-800 text-poke-yellow">{bestScore.points} pts</span></span>
+            </div>
+          )}
+          {bestScore.streak > 0 && (
+            <div className="flex items-center gap-1.5 bg-poke-dark-blue border border-poke-blue/40 rounded-2xl px-4 py-2">
+              <Flame className="w-4 h-4 text-orange-400" />
+              <span className="font-nunito text-sm text-blue-200">Streak: <span className="font-800 text-orange-400">{bestScore.streak}</span></span>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <motion.button
         initial={{ opacity: 0, y: 20 }}

@@ -14,12 +14,17 @@ const SLOTS = [
   { id: 7, x: '43%', y: '84%', size: 60,  cycleMs: 5400 },
 ]
 
-export default function FloatingSilhouettes() {
+// pool prop is optional — if provided the DB fetch is skipped entirely
+export default function FloatingSilhouettes({ pool: poolProp }) {
   const [pool, setPool]   = useState([])
   const [shown, setShown] = useState(Array(SLOTS.length).fill(null))
 
-  // Fetch all pokémon images once
+  // Use provided pool or fall back to fetching from DB
   useEffect(() => {
+    if (poolProp && poolProp.length > 0) {
+      setPool([...poolProp].sort(() => Math.random() - 0.5))
+      return
+    }
     supabase
       .from('pokemons')
       .select('id, image_url')
@@ -28,7 +33,7 @@ export default function FloatingSilhouettes() {
           setPool([...data].sort(() => Math.random() - 0.5))
         }
       })
-  }, [])
+  }, [poolProp])
 
   // Seed slots, then cycle each slot on its own interval
   useEffect(() => {

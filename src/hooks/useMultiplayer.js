@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { isAnswerCorrect } from '../lib/fuzzyMatch'
+import { sounds } from '../lib/sounds'
 
 const SILHOUETTE_DURATION = 5000  // ms silhouette is shown before image auto-reveals
 const FEEDBACK_DURATION   = 3000  // ms feedback is shown before next question
@@ -41,6 +42,12 @@ export function useMultiplayer() {
   const silCountRef  = useRef(null)
   const feedTimerRef = useRef(null)
   const myScore      = useRef({ points: 0, correct: 0, total: 0 })
+
+  // Reactive mirror of myScore so the Header re-renders on score changes
+  const [myScoreState, setMyScoreState] = useState({ points: 0, correct: 0, total: 0 })
+
+  // Notifies players that the host disconnected mid-game
+  const [hostLeft, setHostLeft] = useState(false)
 
   // Refs that always hold the latest mutable game values so stale closures
   // (e.g. inside joinChannel event handlers) can still read current state.
@@ -262,7 +269,10 @@ export function useMultiplayer() {
       channel.on('broadcast', { event: 'reveal_image' }, () => {
         setPhase('image')
       })
-
+      // ── broadcast: host left mid-game ────────────────────────────────────────
+      channel.on('broadcast', { event: 'host_left' }, () => {
+        if (!host) setHostLeft(true)
+      })
       // ── broadcast: game over ──────────────────────────────────────────────
       channel.on('broadcast', { event: 'game_over' }, () => {
         if (!host) {
@@ -283,6 +293,16 @@ export function useMultiplayer() {
 
       channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED' && !skipPresence) {
+          // Soft player cap
+          const playerCount = Object.keys(channel.presenceState()).length
+          if (playerCount >= 20) {
+            supabase.removeChannel(channel)
+            channelRef.current = null
+            setError('Room is full (max 20 players)')
+            setScreen('home')
+            setLoading(false)
+            return
+          }
           await channel.track({ name, points: 0, correct: 0, total: 0 })
         }
       })
@@ -303,6 +323,7 @@ export function useMultiplayer() {
       setPlayerName(name)
       setIsHost(true)
       myScore.current = { points: 0, correct: 0, total: 0 }
+      setMyScoreState({ points: 0, correct: 0, total: 0 })
       joinChannel(code, name, true)
       setLoading(false)
       setScreen('lobby')
@@ -332,6 +353,8 @@ export function useMultiplayer() {
       setPlayerName(name)
       setIsHost(false)
       myScore.current = { points: 0, correct: 0, total: 0 }
+      setMyScoreState({ points: 0, correct: 0, total: 0 })
+      setHostLeft(false)
       joinChannel(code.toUpperCase(), name, false)
       setLoading(false)
       setScreen('lobby')
@@ -387,11 +410,13 @@ export function useMultiplayer() {
       const isCorrect = isAnswerCorrect(userAnswer, pokemon.name)
 
       if (isCorrect) {
+        sounds.correct()
         const alreadyAnswered = firstCorrect !== null
         const basePoints = phase === 'silhouette' ? (alreadyAnswered ? 3 : 5) : (alreadyAnswered ? 1 : 3)
         myScore.current.points  += basePoints
         myScore.current.correct += 1
         myScore.current.total   += 1
+        setMyScoreState({ ...myScore.current })
 
         setFeedback(phase === 'silhouette'
           ? (alreadyAnswered ? 'correct3' : 'correct5')
@@ -415,7 +440,9 @@ export function useMultiplayer() {
           }, FEEDBACK_DURATION)
         }
       } else {
+        sounds.wrong()
         myScore.current.total += 1
+        setMyScoreState({ ...myScore.current })
         setFeedback('wrong')
         channelRef.current?.track({
           name:    playerName,
@@ -477,7 +504,13 @@ export function useMultiplayer() {
     broadcast('game_over', {})
     setScreen('results')
   }, [isHost, broadcast])
-
+  // ── broadcast host_left on page unload (when host during active game) ───────────
+  useEffect(() => {
+    if (!isHost || screen !== 'game') return
+    const handleUnload = () => broadcast('host_left', {})
+    window.addEventListener('beforeunload', handleUnload)
+    return () => window.removeEventListener('beforeunload', handleUnload)
+  }, [isHost, screen, broadcast])
   // ── cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -525,6 +558,10 @@ export function useMultiplayer() {
     quitGame,
     // history for results
     gameHistory,
+    // reactive score for header
+    myScore: myScoreState,
+    // host disconnect
+    hostLeft,
     // derived
     allPokemonLength: allPokemonRef.current.length,
   }

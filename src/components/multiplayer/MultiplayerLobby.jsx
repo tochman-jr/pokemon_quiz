@@ -1,9 +1,18 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Type, List, Hash } from 'lucide-react'
+import { User, Type, List, Hash, Copy, Check } from 'lucide-react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
 
 export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, onSetGameMode, questionCount, onSetQuestionCount, onStart }) {
+  const [copied, setCopied] = useState(false)
+
+  function copyCode() {
+    navigator.clipboard.writeText(roomCode).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -17,6 +26,14 @@ export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, 
         <p className="font-nunito text-blue-300 text-xs mb-1">ROOM CODE</p>
         <p className="font-bangers text-5xl tracking-[0.3em] text-white">{roomCode}</p>
         <p className="font-nunito text-blue-400 text-xs mt-1">Share this with friends</p>
+        <button
+          onClick={copyCode}
+          aria-label="Copy room code"
+          className="mt-3 flex items-center gap-1.5 mx-auto font-nunito text-xs text-blue-300 border border-poke-blue/40 rounded-xl px-4 py-1.5 hover:bg-poke-blue/20 transition-colors"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'Copied!' : 'Copy code'}
+        </button>
       </div>
 
       {/* Player list */}

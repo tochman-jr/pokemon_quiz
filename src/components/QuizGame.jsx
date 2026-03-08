@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Star, Eye } from 'lucide-react'
+import { Star, Eye, ArrowLeft } from 'lucide-react'
 import PokemonImage from './PokemonImage'
 import AnswerForm from './AnswerForm'
 import FeedbackMessage from './FeedbackMessage'
@@ -18,6 +18,7 @@ export default function QuizGame({
   streak,
   onSubmit,
   onSkip,
+  onBack,
 }) {
   const showSilhouette = phase === 'silhouette' && !revealed
   const pointsAvailable = phase === 'silhouette' ? 3 : 1
@@ -28,6 +29,19 @@ export default function QuizGame({
       animate={{ opacity: 1 }}
       className="flex flex-col items-center gap-6 px-4 py-6 w-full max-w-lg mx-auto"
     >
+      {/* Back to menu */}
+      {onBack && (
+        <div className="self-start">
+          <button
+            onClick={onBack}
+            aria-label="Back to menu"
+            className="font-nunito text-sm text-blue-300 hover:text-white transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft className="w-4 h-4" /> Menu
+          </button>
+        </div>
+      )}
+
       {/* Score row */}
       <ScoreBoard score={score} accuracy={accuracy} streak={streak} />
 

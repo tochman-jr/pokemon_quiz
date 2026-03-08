@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Zap, Eye, SkipForward, LogOut } from 'lucide-react'
+import { Star, Zap, Eye, SkipForward, LogOut, WifiOff } from 'lucide-react'
 import PokemonImage from '../PokemonImage'
 import FeedbackMessage from '../FeedbackMessage'
 
@@ -23,6 +23,7 @@ export default function MultiplayerGame({
   questionIndex,
   gameMode,
   options,
+  hostLeft,
 }) {
   const inputRef = useRef(null)
   const showSilhouette = phase === 'silhouette'
@@ -42,6 +43,20 @@ export default function MultiplayerGame({
 
   return (
     <div className="flex flex-col items-center gap-4 px-4 py-6 w-full max-w-lg mx-auto">
+
+      {/* Host-left banner */}
+      <AnimatePresence>
+        {hostLeft && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full flex items-center gap-3 bg-red-950/80 border border-red-600/50 rounded-2xl px-5 py-3"
+          >
+            <WifiOff className="w-5 h-5 text-red-400 shrink-0" />
+            <p className="font-nunito font-700 text-red-300 text-sm flex-1">The host disconnected. Results won’t be saved.</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Leaderboard */}
       <div className="flex gap-2 flex-wrap justify-center w-full">
@@ -162,6 +177,7 @@ export default function MultiplayerGame({
             <button
               type="button"
               onClick={onSkip}
+              aria-label="Skip this question"
               className="flex-1 flex items-center justify-center gap-1 font-bangers text-xl tracking-widest bg-poke-dark-blue text-blue-300 border border-poke-blue/40 py-2 rounded-2xl hover:bg-poke-blue/20 transition-colors"
             >
               <SkipForward className="w-4 h-4" /> Skip
@@ -169,6 +185,7 @@ export default function MultiplayerGame({
             <button
               type="button"
               onClick={onQuit}
+              aria-label="End game now"
               className="flex items-center justify-center gap-1 font-bangers text-lg tracking-widest bg-red-950/60 text-red-400 border border-red-800/40 px-4 py-2 rounded-2xl hover:bg-red-900/40 transition-colors"
               title="End game now"
             >
@@ -182,6 +199,7 @@ export default function MultiplayerGame({
           <div className="flex justify-center mt-3">
             <button
               onClick={onReveal}
+              aria-label="Reveal image now"
               className="font-nunito text-xs text-blue-400 border border-blue-400/30 rounded-sm px-3 py-1 hover:bg-poke-blue/20 transition-colors flex items-center gap-1"
             >
               <Eye className="w-3 h-3" /> Reveal image now

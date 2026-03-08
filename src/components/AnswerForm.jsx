@@ -50,6 +50,7 @@ export default function AnswerForm({ answer, setAnswer, onSubmit, onSkip, disabl
           disabled={disabled || !answer.trim()}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.92 }}
+          aria-label="Submit your guess"
           className="
             flex-1 font-bangers text-2xl tracking-widest
             bg-poke-yellow text-poke-navy py-3 rounded-2xl
@@ -67,6 +68,7 @@ export default function AnswerForm({ answer, setAnswer, onSubmit, onSkip, disabl
           disabled={disabled}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.92 }}
+          aria-label="Skip this Pokémon"
           className="
             font-nunito font-700 text-sm
             bg-poke-dark-blue text-blue-200 px-5 py-3 rounded-2xl
