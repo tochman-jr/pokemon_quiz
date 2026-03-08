@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { User, Type, List, Hash, Tv2 } from 'lucide-react'
+import { User, Type, List, Hash } from 'lucide-react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
 
@@ -104,17 +104,6 @@ export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, 
           Waiting for host to start…
         </p>
       )}
-
-      {/* TV View link — open spectator screen in a new tab */}
-      <a
-        href={`${window.location.origin}${window.location.pathname}?tv=${roomCode}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 font-nunito text-sm text-blue-300 hover:text-poke-yellow transition-colors border border-poke-blue/30 rounded-2xl px-5 py-2"
-      >
-        <Tv2 className="w-4 h-4" />
-        Open TV View
-      </a>
     </motion.div>
   )
 }

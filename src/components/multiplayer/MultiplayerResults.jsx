@@ -111,7 +111,7 @@ export default function MultiplayerResults({
 
       {/* ── Rounds tab ── */}
       {tab === 'rounds' && (
-        <div className="w-full flex flex-col gap-2 overflow-y-auto max-h-[52vh] pr-1">
+        <div className="w-full flex flex-col gap-3 overflow-y-auto max-h-[52vh] pr-1">
           {gameHistory.length === 0 ? (
             <p className="text-center font-nunito text-blue-400 text-sm py-6">
               No round data available.
@@ -123,43 +123,54 @@ export default function MultiplayerResults({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="flex items-center gap-3 bg-poke-dark-blue border border-poke-blue/20 rounded-2xl px-3 py-2"
+                className="bg-poke-dark-blue border border-poke-blue/20 rounded-2xl overflow-hidden"
               >
-                <span className="font-bangers text-base text-blue-400 w-6 shrink-0 text-right">
-                  {i + 1}
-                </span>
-                {q.pokemon?.image_url && (
-                  <img
-                    src={q.pokemon.image_url}
-                    alt={q.pokemon.name}
-                    className="w-9 h-9 object-contain shrink-0"
-                  />
-                )}
-                <span className="font-nunito font-700 text-white text-sm flex-1 min-w-0 truncate capitalize">
-                  {q.pokemon?.name ?? '?'}
-                </span>
-                {q.winnerName ? (
-                  <span className="font-nunito font-700 text-xs bg-green-900/60 text-green-300 border border-green-700/40 rounded-xl px-2 py-0.5 shrink-0 flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-current" />
-                    {q.winnerName}{' '}
-                    <span className="opacity-70">+{q.winnerPoints}</span>
+                {/* Top: Pokémon identity */}
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-poke-blue/10">
+                  <span className="font-bangers text-sm text-blue-500 w-5 shrink-0">
+                    {i + 1}
                   </span>
-                ) : (
-                  <span className="font-nunito text-xs text-blue-500 border border-blue-800/40 rounded-xl px-2 py-0.5 shrink-0">
-                    No winner
+                  {q.pokemon?.image_url && (
+                    <img
+                      src={q.pokemon.image_url}
+                      alt={q.pokemon.name}
+                      className="w-12 h-12 object-contain shrink-0"
+                    />
+                  )}
+                  <span className="font-bangers text-xl text-white tracking-wide capitalize">
+                    {q.pokemon?.name ?? '?'}
                   </span>
-                )}
-                {q.winnerPhase && (
-                  <span
-                    className={`font-nunito text-xs rounded-xl px-2 py-0.5 shrink-0 hidden sm:inline ${
-                      q.winnerPhase === 'silhouette'
-                        ? 'bg-yellow-900/50 text-yellow-300 border border-yellow-700/30'
-                        : 'bg-blue-900/50 text-blue-300 border border-blue-700/30'
-                    }`}
-                  >
-                    {q.winnerPhase === 'silhouette' ? 'Silhouette' : 'Revealed'}
-                  </span>
-                )}
+                  {q.winnerPhase && (
+                    <span
+                      className={`ml-auto font-nunito text-xs font-700 rounded-xl px-2 py-1 shrink-0 ${
+                        q.winnerPhase === 'silhouette'
+                          ? 'bg-yellow-900/60 text-yellow-300 border border-yellow-700/30'
+                          : 'bg-blue-900/60 text-blue-300 border border-blue-700/30'
+                      }`}
+                    >
+                      {q.winnerPhase === 'silhouette' ? '🌑 Silhouette' : '🖼️ Revealed'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Bottom: Who got it */}
+                <div className="px-4 py-2.5">
+                  {q.winnerName ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-nunito text-xs text-blue-400 shrink-0">First correct:</span>
+                      <span className="font-nunito font-800 text-white text-sm">
+                        {q.winnerName}
+                      </span>
+                      <span className="ml-auto font-bangers text-lg text-green-400 flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-current" /> +{q.winnerPoints}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="font-nunito text-sm text-blue-500 italic">
+                      Nobody answered correctly
+                    </p>
+                  )}
+                </div>
               </motion.div>
             ))
           )}

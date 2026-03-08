@@ -167,7 +167,7 @@ export function useMultiplayer() {
 
   // ── subscribe to a room channel ───────────────────────────────────────────
   const joinChannel = useCallback(
-    (code, name, host) => {
+    (code, name, host, skipPresence = false) => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
       }
@@ -282,7 +282,7 @@ export function useMultiplayer() {
       })
 
       channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
+        if (status === 'SUBSCRIBED' && !skipPresence) {
           await channel.track({ name, points: 0, correct: 0, total: 0 })
         }
       })
@@ -309,6 +309,18 @@ export function useMultiplayer() {
     },
     [joinChannel]
   )
+
+  // ── create room as TV host (no presence — TV won't appear in player list) —
+  const createRoomAsTV = useCallback(() => {
+    setError(null)
+    const code = generateRoomCode()
+    setRoomCode(code)
+    setPlayerName('')
+    setIsHost(true)
+    myScore.current = { points: 0, correct: 0, total: 0 }
+    joinChannel(code, '__TV__', true, true) // skipPresence=true
+    setScreen('lobby')
+  }, [joinChannel])
 
   // ── join room ─────────────────────────────────────────────────────────────
   const joinRoom = useCallback(
@@ -504,6 +516,7 @@ export function useMultiplayer() {
     setQuestionCount: changeQuestionCount,
     // actions
     createRoom,
+    createRoomAsTV,
     joinRoom,
     startGame,
     submitAnswer,
@@ -512,5 +525,7 @@ export function useMultiplayer() {
     quitGame,
     // history for results
     gameHistory,
+    // derived
+    allPokemonLength: allPokemonRef.current.length,
   }
 }

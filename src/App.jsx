@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gamepad2, Users, AlertTriangle } from 'lucide-react'
 import { useQuiz } from './hooks/useQuiz'
@@ -11,15 +12,18 @@ import MultiplayerHome from './components/multiplayer/MultiplayerHome'
 import MultiplayerLobby from './components/multiplayer/MultiplayerLobby'
 import MultiplayerGame from './components/multiplayer/MultiplayerGame'
 import MultiplayerResults from './components/multiplayer/MultiplayerResults'
-import TvView from './components/multiplayer/TvView'
-
-// If opened with ?tv=ROOMCODE, render the TV spectator view directly
-const tvRoomCode = new URLSearchParams(window.location.search).get('tv')
+import TvHostView from './components/multiplayer/TvHostView'
 
 export default function App() {
-  // TV spectator mode — full-screen display for a shared screen / TV
-  if (tvRoomCode) return <TvView roomCode={tvRoomCode.toUpperCase()} />
+  return (
+    <Routes>
+      <Route path="/tv" element={<TvHostView />} />
+      <Route path="*" element={<PlayerApp />} />
+    </Routes>
+  )
+}
 
+function PlayerApp() {
   const [mode, setMode] = useState(null) // null | 'solo' | 'multi'
 
   const quiz = useQuiz()
