@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
-import { User } from 'lucide-react'
+import { User, Type, List } from 'lucide-react'
 
-export default function MultiplayerLobby({ roomCode, players, isHost, onStart }) {
+export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, onSetGameMode, onStart }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -35,6 +35,35 @@ export default function MultiplayerLobby({ roomCode, players, isHost, onStart })
           <p className="font-nunito text-blue-400 text-sm text-center py-2">Waiting for players…</p>
         )}
       </div>
+
+      {/* Game mode selector (host only) */}
+      {isHost && (
+        <div className="w-full flex flex-col gap-2">
+          <p className="font-nunito text-blue-300 text-xs font-700 text-center">QUESTION TYPE</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => onSetGameMode('open')}
+              className={`flex-1 flex items-center justify-center gap-2 font-bangers text-xl tracking-widest py-3 rounded-2xl transition-all ${
+                gameMode === 'open'
+                  ? 'bg-poke-yellow text-poke-navy shadow-[0_4px_0_#C7A008]'
+                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+              }`}
+            >
+              <Type className="w-5 h-5" /> Open
+            </button>
+            <button
+              onClick={() => onSetGameMode('choice')}
+              className={`flex-1 flex items-center justify-center gap-2 font-bangers text-xl tracking-widest py-3 rounded-2xl transition-all ${
+                gameMode === 'choice'
+                  ? 'bg-poke-yellow text-poke-navy shadow-[0_4px_0_#C7A008]'
+                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+              }`}
+            >
+              <List className="w-5 h-5" /> Multiple Choice
+            </button>
+          </div>
+        </div>
+      )}
 
       {isHost ? (
         <button

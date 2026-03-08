@@ -5,6 +5,16 @@ import { isAnswerCorrect } from '../lib/fuzzyMatch'
 const SILHOUETTE_DURATION = 5000  // ms silhouette is shown before image auto-reveals
 const FEEDBACK_DURATION   = 3000  // ms feedback is shown before next question
 
+// Pick the correct pokemon name + 3 random wrong names, then shuffle them.
+function generateOptions(correctPokemon, fullList) {
+  const wrong = fullList
+    .filter((p) => p.id !== correctPokemon.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map((p) => p.name)
+  return [correctPokemon.name, ...wrong].sort(() => Math.random() - 0.5)
+}
+
 export function useMultiplayer() {
   // ── lobby state ──────────────────────────────────────────────────────────
   const [screen, setScreen]         = useState('home')   // 'home'|'lobby'|'game'|'results'
@@ -45,6 +55,12 @@ export function useMultiplayer() {
   const hasStartedRef    = useRef(false)
   const [gameHistory, setGameHistory] = useState([])
 
+  // ── game mode (open / multiple choice) ───────────────────────────────────
+  const [gameMode, setGameMode] = useState('open')   // 'open' | 'choice'
+  const gameModeRef             = useRef('open')
+  const [options, setOptions]   = useState([])        // MC answer options for current Q
+  const fullPokemonListRef      = useRef([])           // all 151 pokemon, never overwritten
+
   // ── helpers ───────────────────────────────────────────────────────────────
   const broadcast = useCallback((event, payload) => {
     channelRef.current?.send({ type: 'broadcast', event, payload })
@@ -63,6 +79,7 @@ export function useMultiplayer() {
         if (err || !data) return
         setAllPokemon(data)
         allPokemonRef.current = data
+        fullPokemonListRef.current = data
       })
   }, [])
 
@@ -117,6 +134,11 @@ export function useMultiplayer() {
         return
       }
 
+      // Generate MC options for next question (empty array in open mode)
+      const opts = gameModeRef.current === 'choice'
+        ? generateOptions(pokemonList[next], fullPokemonListRef.current)
+        : []
+
       // Update host state directly
       setPokemon(pokemonList[next])
       setQuestionIndex(next)
@@ -125,10 +147,11 @@ export function useMultiplayer() {
       setFeedback(null)
       setAnswer('')
       setFirstCorrect(null)
+      setOptions(opts)
       startSilhouetteTimer()
 
       // Notify other players (index only — they already have the game list)
-      broadcast('question', { index: next })
+      broadcast('question', { index: next, gameMode: gameModeRef.current, options: opts })
     },
     [broadcast, startSilhouetteTimer]
   )
@@ -196,6 +219,12 @@ export function useMultiplayer() {
         setFeedback(null)
         setAnswer('')
         setFirstCorrect(null)
+        // Sync game mode and MC options from host
+        if (payload.gameMode) {
+          gameModeRef.current = payload.gameMode
+          setGameMode(payload.gameMode)
+        }
+        setOptions(payload.options ?? [])
         setScreen('game')
         startSilhouetteTimer()
       })
@@ -305,6 +334,11 @@ export function useMultiplayer() {
     hasStartedRef.current = false
     setGameHistory([])
 
+    // Generate MC options for Q0 (empty in open mode)
+    const opts = gameModeRef.current === 'choice'
+      ? generateOptions(shuffled[0], fullPokemonListRef.current)
+      : []
+
     // Update host state
     setAllPokemon(shuffled)
     allPokemonRef.current = shuffled
@@ -314,11 +348,13 @@ export function useMultiplayer() {
     setAnswered(false)
     setFeedback(null)
     setFirstCorrect(null)
+    setOptions(opts)
     startSilhouetteTimer()
     setScreen('game')
 
-    // Broadcast Q0 with the full game list so non-host players can sync the shuffle
-    broadcast('question', { index: 0, gameList: shuffled })
+    // Broadcast Q0 with the full game list so non-host players can sync the shuffle.
+    // Also include gameMode and options so everyone is in sync.
+    broadcast('question', { index: 0, gameList: shuffled, gameMode: gameModeRef.current, options: opts })
   }, [isHost, allPokemon, broadcast, startSilhouetteTimer])
 
   // ── submit answer ─────────────────────────────────────────────────────────
@@ -381,6 +417,12 @@ export function useMultiplayer() {
     if (isHost) broadcast('reveal_image', {})
   }, [isHost, broadcast])
 
+  // ── toggle game mode (host only, lobby) ─────────────────────────────────
+  const toggleGameMode = useCallback((mode) => {
+    gameModeRef.current = mode
+    setGameMode(mode)
+  }, [])
+
   // ── skip question (host only) ─────────────────────────────────────────────
   const skipQuestion = useCallback(() => {
     if (!isHost) return
@@ -438,6 +480,10 @@ export function useMultiplayer() {
     answered,
     firstCorrect,
     myScore: myScore.current,
+    // game mode
+    gameMode,
+    setGameMode: toggleGameMode,
+    options,
     // actions
     createRoom,
     joinRoom,

@@ -121,6 +121,8 @@ export default function App() {
                 roomCode={multi.roomCode}
                 players={multi.players}
                 isHost={multi.isHost}
+                gameMode={multi.gameMode}
+                onSetGameMode={multi.setGameMode}
                 onStart={multi.startGame}
               />
             )}
@@ -143,6 +145,8 @@ export default function App() {
                 onSkip={multi.skipQuestion}
                 onQuit={multi.quitGame}
                 questionIndex={multi.questionIndex}
+                gameMode={multi.gameMode}
+                options={multi.options}
               />
             )}
             {multi.screen === 'results' && (

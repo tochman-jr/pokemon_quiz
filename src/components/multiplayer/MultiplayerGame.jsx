@@ -21,6 +21,8 @@ export default function MultiplayerGame({
   onSkip,
   onQuit,
   questionIndex,
+  gameMode,
+  options,
 }) {
   const inputRef = useRef(null)
   const showSilhouette = phase === 'silhouette'
@@ -109,8 +111,23 @@ export default function MultiplayerGame({
           <FeedbackMessage feedback={feedback} pokemonName={pokemon?.name ?? ''} />
         </div>
 
-        {/* Input */}
-        {!answered && (
+        {/* Input — multiple choice buttons or open text form */}
+        {!answered && gameMode === 'choice' && options.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => onSubmit(opt)}
+                className="font-nunito font-700 text-base bg-poke-dark-blue text-white border-2 border-poke-blue/40 px-4 py-3 rounded-2xl hover:border-poke-yellow hover:text-poke-yellow transition-all capitalize"
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!answered && gameMode !== 'choice' && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 mt-4">
             <input
               ref={inputRef}
