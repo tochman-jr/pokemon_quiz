@@ -1,11 +1,20 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { isAnswerCorrect } from '../lib/fuzzyMatch'
 import { sounds } from '../lib/sounds'
 
-const FEEDBACK_DURATION = 2000 // ms before advancing to next pokemon
-const ROUND_LENGTH = 20        // questions before showing a round summary
+const FEEDBACK_DURATION = 2000
+const ROUND_LENGTH = 20
 const STREAK_MILESTONES = new Set([5, 10, 15, 20])
+
+function generateOptions(correctPokemon, fullList) {
+  const wrong = fullList
+    .filter((p) => p.id !== correctPokemon.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map((p) => p.name)
+  return [correctPokemon.name, ...wrong].sort(() => Math.random() - 0.5)
+}
 
 export function useQuiz() {
   const [pokemon, setPokemon] = useState(null)
@@ -21,13 +30,19 @@ export function useQuiz() {
   const [streak, setStreak] = useState(0)
 
   // ── persistent / session extras ───────────────────────────────────────────
-  const [allPokemon, setAllPokemon] = useState([])   // full pool (never depleted)
+  const [allPokemon, setAllPokemon] = useState([])
+  const allPokemonRef = useRef([])
   const [bestScore, setBestScore] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pokequiz-best') ?? 'null') ?? { points: 0, streak: 0 } }
     catch { return { points: 0, streak: 0 } }
   })
-  const [streakMilestone, setStreakMilestone] = useState(null) // number | null
+  const [streakMilestone, setStreakMilestone] = useState(null)
   const [roundComplete, setRoundComplete] = useState(false)
+
+  // ── game mode ─────────────────────────────────────────────────────────────
+  const [gameMode, setGameMode] = useState('open') // 'open' | 'choice'
+  const gameModeRef = useRef('open')
+  const [options, setOptions] = useState([])
 
   // Fetch all 151 pokemon and shuffle them into a queue
   const loadPokemon = useCallback(async () => {
@@ -43,6 +58,7 @@ export function useQuiz() {
       if (!data || data.length === 0) throw new Error('No Pokemon found in database. Run "npm run scrape" first.')
 
       setAllPokemon(data) // keep full unshuffled pool for background decoration
+      allPokemonRef.current = data
       const shuffled = [...data].sort(() => Math.random() - 0.5)
       setQueue(shuffled)
       setPokemon(shuffled[0])
@@ -75,6 +91,25 @@ export function useQuiz() {
     setRevealed(false)
     setPhase('silhouette')
   }, [])
+
+  // Regenerate MC options whenever the current pokemon changes
+  useEffect(() => {
+    if (gameModeRef.current === 'choice' && pokemon && allPokemonRef.current.length > 0) {
+      setOptions(generateOptions(pokemon, allPokemonRef.current))
+    } else {
+      setOptions([])
+    }
+  }, [pokemon])
+
+  const changeGameMode = useCallback((mode) => {
+    gameModeRef.current = mode
+    setGameMode(mode)
+    if (mode === 'choice' && pokemon && allPokemonRef.current.length > 0) {
+      setOptions(generateOptions(pokemon, allPokemonRef.current))
+    } else {
+      setOptions([])
+    }
+  }, [pokemon])
 
   const submitAnswer = useCallback(
     (userAnswer) => {
@@ -198,5 +233,8 @@ export function useQuiz() {
     bestScore,
     streakMilestone,
     roundComplete,
+    gameMode,
+    setGameMode: changeGameMode,
+    options,
   }
 }

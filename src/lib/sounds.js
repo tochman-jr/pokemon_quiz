@@ -1,8 +1,7 @@
 /**
  * Programmatic sound effects using the Web Audio API.
- * No asset files needed — tones are synthesised from parameters.
- * Safe to call before a user gesture; the AudioContext is created lazily
- * on first play (which always follows a gesture).
+ * Uses scheduled multi-note sequences for a proper 8-bit game feel.
+ * AudioContext is created lazily on first call (always follows a user gesture).
  */
 
 let ctx = null
@@ -12,31 +11,68 @@ function getCtx() {
   return ctx
 }
 
-function beep({ frequency = 440, duration = 0.15, type = 'sine', gain = 0.25 } = {}) {
+/**
+ * Schedule a single note at an exact AudioContext time.
+ * @param {number} freq    - frequency in Hz
+ * @param {number} start   - AudioContext timestamp to start
+ * @param {number} dur     - duration in seconds
+ * @param {number} gain    - peak gain (0–1)
+ * @param {OscillatorType} type
+ */
+function note(freq, start, dur, gain = 0.28, type = 'square') {
   try {
     const ac = getCtx()
     const osc = ac.createOscillator()
-    const g = ac.createGain()
+    const g   = ac.createGain()
     osc.connect(g)
     g.connect(ac.destination)
-    osc.frequency.value = frequency
     osc.type = type
-    g.gain.setValueAtTime(gain, ac.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration)
-    osc.start(ac.currentTime)
-    osc.stop(ac.currentTime + duration)
+    osc.frequency.value = freq
+    g.gain.setValueAtTime(0, start)
+    g.gain.linearRampToValueAtTime(gain, start + 0.01)
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur)
+    osc.start(start)
+    osc.stop(start + dur + 0.05)
   } catch {
-    // Silently ignore if AudioContext is unavailable (e.g. server-side render)
+    // AudioContext unavailable (SSR / blocked by browser policy)
   }
 }
 
 export const sounds = {
-  correct: () => beep({ frequency: 880, duration: 0.18, type: 'sine' }),
-  wrong:   () => beep({ frequency: 200, duration: 0.25, type: 'sawtooth', gain: 0.2 }),
-  skip:    () => beep({ frequency: 440, duration: 0.1,  type: 'sine',     gain: 0.12 }),
-  streak:  () => {
-    beep({ frequency: 660, duration: 0.12 })
-    setTimeout(() => beep({ frequency: 880, duration: 0.18, gain: 0.3 }), 120)
+  /** Three-note ascending arpeggio — satisfying coin/correct sound */
+  correct: () => {
+    const t = getCtx().currentTime
+    note(523,  t,        0.10, 0.25) // C5
+    note(659,  t + 0.09, 0.10, 0.25) // E5
+    note(784,  t + 0.18, 0.20, 0.30) // G5
   },
-  click:   () => beep({ frequency: 1200, duration: 0.07, gain: 0.1 }),
+
+  /** Two descending sawtooth notes — classic wrong-answer "dun dun" */
+  wrong: () => {
+    const t = getCtx().currentTime
+    note(311, t,        0.18, 0.22, 'sawtooth') // Eb4
+    note(233, t + 0.16, 0.28, 0.18, 'sawtooth') // Bb3
+  },
+
+  /** Soft two-note descending tap — light skip */
+  skip: () => {
+    const t = getCtx().currentTime
+    note(440, t,        0.07, 0.14, 'sine') // A4
+    note(330, t + 0.07, 0.10, 0.09, 'sine') // E4
+  },
+
+  /** Four-note triumphant fanfare — streak milestone */
+  streak: () => {
+    const t = getCtx().currentTime
+    note(523,  t,        0.09, 0.20) // C5
+    note(659,  t + 0.09, 0.09, 0.20) // E5
+    note(784,  t + 0.18, 0.09, 0.22) // G5
+    note(1047, t + 0.27, 0.28, 0.32) // C6
+  },
+
+  /** Tiny tick for UI interactions */
+  click: () => {
+    const t = getCtx().currentTime
+    note(1200, t, 0.05, 0.08, 'sine')
+  },
 }

@@ -19,6 +19,8 @@ export default function QuizGame({
   onSubmit,
   onSkip,
   onBack,
+  gameMode,
+  options,
 }) {
   const showSilhouette = phase === 'silhouette' && !revealed
   const pointsAvailable = phase === 'silhouette' ? 3 : 1
@@ -79,22 +81,39 @@ export default function QuizGame({
           <FeedbackMessage feedback={feedback} pokemonName={pokemon?.name ?? ''} />
         </div>
 
-        {/* Answer form */}
+        {/* Answer form — multiple choice grid or open text input */}
         <div className="mt-4">
-          <AnswerForm
-            answer={answer}
-            setAnswer={setAnswer}
-            onSubmit={onSubmit}
-            onSkip={onSkip}
-            disabled={feedback !== null}
-          />
+          {gameMode === 'choice' && options.length > 0 && feedback === null ? (
+            <div className="grid grid-cols-2 gap-3">
+              {options.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onSubmit(opt)}
+                  className="font-nunito font-700 text-base bg-poke-dark-blue text-white border-2 border-poke-blue/40 px-4 py-3 rounded-2xl hover:border-poke-yellow hover:text-poke-yellow transition-all capitalize focus-visible:outline-2 focus-visible:outline-poke-yellow"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          ) : gameMode !== 'choice' ? (
+            <AnswerForm
+              answer={answer}
+              setAnswer={setAnswer}
+              onSubmit={onSubmit}
+              onSkip={onSkip}
+              disabled={feedback !== null}
+            />
+          ) : null}
         </div>
       </motion.div>
 
-      {/* Fun tip */}
-      <p className="font-nunito text-blue-300/60 text-xs text-center">
-        Tip: spelling doesn't have to be perfect — just close enough!
-      </p>
+      {/* Fun tip — only in open mode */}
+      {gameMode !== 'choice' && (
+        <p className="font-nunito text-blue-300/60 text-xs text-center">
+          Tip: spelling doesn’t have to be perfect — just close enough!
+        </p>
+      )}
     </motion.div>
   )
 }

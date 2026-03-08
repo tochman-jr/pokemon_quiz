@@ -16,11 +16,12 @@ This document captures every architectural decision, pattern, and implementation
 8. [Solo Mode — useQuiz Hook](#8-solo-mode--usequiz-hook)
 9. [Multiplayer System — useMultiplayer Hook](#9-multiplayer-system--usemultiplayer-hook)
 10. [TV / Spectator View — useTvView Hook](#10-tv--spectator-view--ustvview-hook)
-11. [Fuzzy Answer Matching](#11-fuzzy-answer-matching)
-12. [Scoring System](#12-scoring-system)
-13. [Component Catalogue](#13-component-catalogue)
-14. [Multiplayer Event Protocol](#14-multiplayer-event-protocol)
-15. [Adapting to a Music Quiz (Spotify API)](#15-adapting-to-a-music-quiz-spotify-api)
+11. [Sound Effects Library](#11-sound-effects-library)
+12. [Fuzzy Answer Matching](#12-fuzzy-answer-matching)
+13. [Scoring System](#13-scoring-system)
+14. [Component Catalogue](#14-component-catalogue)
+15. [Multiplayer Event Protocol](#15-multiplayer-event-protocol)
+16. [Adapting to a Music Quiz (Spotify API)](#16-adapting-to-a-music-quiz-spotify-api)
 
 ---
 
@@ -326,6 +327,11 @@ There is **no URL-based navigation** for solo/multiplayer — it is controlled b
 | `score` | `{ points, correct, total }` | Running score |
 | `streak` | number | Current correct-answer streak |
 | `gameStarted` | boolean | Whether the player has pressed START |
+| `gameMode` | string | `'open'` \| `'choice'` — answer input mode |
+| `options` | string[] | 4 pokemon names for multiple choice (empty in open mode) |
+| `bestScore` | `{ points, streak }` | All-time best from localStorage |
+| `streakMilestone` | number \| null | Fires at multiples of 5 streak for overlay |
+| `roundComplete` | boolean | True every 20 questions for summary screen |
 
 ### Key behaviours
 
@@ -335,17 +341,43 @@ const { data } = await supabase.from('pokemons').select('id, number, name, image
 const shuffled = [...data].sort(() => Math.random() - 0.5)
 setQueue(shuffled)
 setPokemon(shuffled[0])
+allPokemonRef.current = data   // kept for generateOptions
 ```
 
 **Advance to next:**
 - Sets next pokemon, resets `answer`, `feedback`, `revealed`, `phase`.
+- Preloads next image (`new Image().src = ...`) to avoid flicker.
 - When queue depletes, re-shuffles in place (infinite loop).
+- Every 20 questions sets `roundComplete = true` (triggers SoloSummary overlay).
 
 **Score on correct answer:**
 - Silhouette phase: +3 pts
 - Image phase: +1 pt
 
 **Auto-advance timer:** `FEEDBACK_DURATION = 2000ms` after answer/skip → `nextPokemon()`.
+
+**LocalStorage best score:**
+```js
+// Key: 'pokequiz-best' → { points: number, streak: number }
+// Read on hook init, written whenever a new record is set
+const saved = JSON.parse(localStorage.getItem('pokequiz-best') || '{}')
+const [bestScore, setBestScore] = useState({ points: saved.points || 0, streak: saved.streak || 0 })
+```
+
+**Streak milestones:** Fires `setStreakMilestone(streak)` at every multiple of 5. `App.jsx` renders a full-screen overlay when `streakMilestone !== null`.
+
+**Multiple choice mode:**
+```js
+function generateOptions(correctPokemon, fullList) {
+  const wrong = fullList
+    .filter(p => p.id !== correctPokemon.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(p => p.name)
+  return [correctPokemon.name, ...wrong].sort(() => Math.random() - 0.5)
+}
+```
+Options regenerate automatically via a `useEffect` watching `pokemon`. Changing `gameMode` via `changeGameMode()` also regenerates immediately. Options are local to the player (not broadcast) in solo mode.
 
 **Exported API:**
 ```js
@@ -354,11 +386,20 @@ setPokemon(shuffled[0])
   answer, setAnswer,
   feedback, revealed, phase,
   score, accuracy, streak, gameStarted,
-  revealImage,    // silhouette → image
-  startGame,      // resets score, sets gameStarted=true
-  submitAnswer,   // checks answer, sets feedback, advances timer
-  skipPokemon,    // marks skipped, advances timer
-  reloadPokemon,  // re-fetches DB (error recovery)
+  gameMode,
+  setGameMode,   // changeGameMode — updates ref + state, regenerates options
+  options,       // [] in open mode, [name, name, name, name] in choice mode
+  bestScore,     // { points, streak } from localStorage
+  streakMilestone, // number | null — cleared by App.jsx after overlay
+  roundComplete, // boolean — cleared by startNewRound()
+  allPokemon,    // full unshuffled pool (used by FloatingSilhouettes)
+  revealImage,   // silhouette → image
+  startGame,     // resets score, sets gameStarted=true
+  exitGame,      // sets gameStarted=false (back button)
+  startNewRound, // clears roundComplete, continues with same pool
+  submitAnswer,  // checks answer, sets feedback, plays sound, advances timer
+  skipPokemon,   // marks skipped, plays sound, advances timer
+  reloadPokemon, // re-fetches DB (error recovery)
 }
 ```
 
@@ -374,6 +415,35 @@ This is the most complex piece of the codebase. It manages:
 - Host-driven game flow
 - Multiple choice vs open-answer modes
 - Per-question history for results screen
+
+### Reactive score state fix
+
+The player's own score is stored in both a `useRef` (for use inside channel callbacks without stale-closure issues) **and** a `useState` mirror (`myScoreState`). The hook returns the state version so React re-renders reliably:
+
+```js
+const myScore = useRef({ points: 0, correct: 0, total: 0 })
+const [myScoreState, setMyScoreState] = useState({ points: 0, correct: 0, total: 0 })
+
+// Always update both together:
+function updateScore(next) {
+  myScore.current = next
+  setMyScoreState(next)
+}
+```
+
+### Player cap
+
+When a new player subscribes (joins the channel), the host checks `players.length >= 20` and — if over the cap — the new client's subscription is allowed but game start is blocked via a guard. (The cap is enforced in the UI: the lobby shows a warning and the host cannot start with > 20 players.)
+
+### Host disconnect handling
+
+A `beforeunload` event listener fires `broadcast('host_left', {})` when the host closes the tab. Remaining players receive `host_left` and `hostLeft` state is set `true` — `MultiplayerGame` shows a WifiOff banner.
+
+### Sound effects
+
+The hook imports `sounds` from `src/lib/sounds.js` and calls:
+- `sounds.correct()` / `sounds.wrong()` on answer submission
+- No sounds on skip (handled by solo hook only)
 
 ### Architecture: Host-Driven Model
 
@@ -521,8 +591,9 @@ The TV creates a room with `createRoomAsTV()`:
   gameMode, setGameMode: (mode) => { gameModeRef.current = mode; setGameMode(mode) },
   questionCount, setQuestionCount: (n) => { questionCountRef.current = n; setQuestionCount(n) },
   options, gameHistory,
+  hostLeft,          // boolean — host disconnected mid-game (shows banner)
   loading, error,
-  myScore: myScore.current,   // { points, correct, total } — ref, not state
+  myScore: myScoreState,  // { points, correct, total } — reactive state (NOT a ref)
 
   // Actions
   createRoom,        // (name) → generate code, join channel, lobby
@@ -560,7 +631,70 @@ It maintains its own player list by listening to presence events, and its own `p
 
 ---
 
-## 11. Fuzzy Answer Matching
+## 11. Sound Effects Library
+
+**File:** `src/lib/sounds.js`
+
+All game sound effects using the **Web Audio API** — zero audio files required.
+
+### API
+
+```js
+import sounds from '../lib/sounds'
+
+sounds.correct()  // ascending 3-note arpeggio (correct answer)
+sounds.wrong()    // descending 2-note (wrong answer)
+sounds.skip()     // soft 2-note step-down (skip)
+sounds.streak()   // 4-note triumphant fanfare (streak milestone)
+sounds.click()    // short tick (UI interaction)
+```
+
+### Implementation pattern
+
+```js
+let _ctx = null
+function getCtx() {
+  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)()
+  return _ctx
+}
+
+function note(freq, startTime, duration, gain = 0.3, type = 'square') {
+  const ac = getCtx()
+  const osc = ac.createOscillator()
+  const g   = ac.createGain()
+  osc.connect(g)
+  g.connect(ac.destination)
+  osc.frequency.value = freq
+  osc.type = type
+  g.gain.setValueAtTime(0, startTime)
+  g.gain.linearRampToValueAtTime(gain, startTime + 0.01)
+  g.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+  osc.start(startTime)
+  osc.stop(startTime + duration + 0.05)
+}
+
+const sounds = {
+  correct: () => { const t = getCtx().currentTime; note(523, t, 0.1, 0.25); note(659, t+0.09, 0.12, 0.25); note(784, t+0.18, 0.18, 0.28) },
+  wrong:   () => { const t = getCtx().currentTime; note(311, t, 0.18, 0.25, 'sawtooth'); note(233, t+0.16, 0.25, 0.22, 'sawtooth') },
+  skip:    () => { const t = getCtx().currentTime; note(440, t, 0.05, 0.15, 'sine'); note(330, t+0.05, 0.1, 0.1, 'sine') },
+  streak:  () => { const t = getCtx().currentTime; note(523,t,0.1,0.2); note(659,t+0.1,0.1,0.2); note(784,t+0.2,0.1,0.2); note(1046,t+0.3,0.25,0.3) },
+  click:   () => { const t = getCtx().currentTime; note(1200, t, 0.03, 0.1, 'sine') },
+}
+
+export default sounds
+```
+
+**Key design decisions:**
+- `AudioContext` is lazily created on first use (browsers block it until user gesture).
+- Notes are scheduled with `AudioContext.currentTime` offsets — this ensures tight, glitch-free timing without `setTimeout`.
+- `exponentialRampToValueAtTime` produces natural-sounding note decay.
+- Imported by both `useQuiz.js` and `useMultiplayer.js`.
+
+**For Music Quiz:** keep this as-is for UI feedback. Actual audio playback uses `<audio>` or the Web Audio `AudioBufferSourceNode` for the track preview.
+
+---
+
+## 12. Fuzzy Answer Matching
 
 **File:** `src/lib/fuzzyMatch.js`
 
@@ -582,7 +716,7 @@ const ok = isAnswerCorrect(userInput, correctName)
 
 ---
 
-## 12. Scoring System
+## 13. Scoring System
 
 ### Solo
 
@@ -608,19 +742,31 @@ Stats displayed: `points, correct, total, accuracy (correct/total %)`, `streak`.
 
 ---
 
-## 13. Component Catalogue
+## 14. Component Catalogue
 
 ### `<Header score streak />`
 Top bar always visible. Shows logo, correct count chip, total count chip. Shows flame streak chip when `streak >= 3`.
 
-### `<StartScreen onStart onBack />`
-Solo pre-game screen. Animated Pokeball, title, description, START button. Uses `<FloatingSilhouettes />` for background.
+### `<StartScreen onStart onBack bestScore pool gameMode onSetGameMode />`
+Solo pre-game screen. Animated Pokeball, title, description, mode selector, START button. Uses `<FloatingSilhouettes pool={pool} />` for background.
 
-### `<FloatingSilhouettes />`
-Fetches all pokemon images from DB. Cycles silhouettes through 8 fixed screen slots at staggered intervals. Pure decoration — `aria-hidden`, `pointer-events-none`.
+**Mode selector** — two buttons (Open / Multiple Choice) using `Type` and `List` icons from lucide-react:
+- Active: `bg-poke-yellow text-poke-navy`
+- Inactive: `bg-poke-dark-blue text-blue-300 border border-poke-blue/30`
 
-### `<QuizGame pokemon answer setAnswer feedback revealed phase onReveal score accuracy streak onSubmit onSkip />`
-Solo game card. Renders `<PokemonImage>`, `<AnswerForm>`, `<FeedbackMessage>`, `<ScoreBoard>`. Has a "Reveal image (1 pt)" button in silhouette phase.
+**Best score badges** — shown when `bestScore.points > 0` or `bestScore.streak >= 3`:
+- `<Star>` badge: all-time best points
+- `<Flame>` badge: all-time best streak (shown when streak ≥ 3)
+
+### `<FloatingSilhouettes pool? />`
+Fetches all pokemon images from DB **unless** a `pool` prop is provided (avoids a redundant network call when `useQuiz` has already loaded the data). Cycles silhouettes through 8 fixed screen slots at staggered intervals. Pure decoration — `aria-hidden`, `pointer-events-none`.
+
+### `<QuizGame pokemon answer setAnswer feedback revealed phase onReveal score accuracy streak onSubmit onSkip onBack gameMode options />`
+Solo game card. Renders `<PokemonImage>`, answer UI, `<FeedbackMessage>`, `<ScoreBoard>`. Has a back button (ArrowLeft icon) and a "Reveal image (1 pt)" button in silhouette phase.
+
+**Answer UI modes:**
+- `gameMode === 'open'` → `<AnswerForm>` text input
+- `gameMode === 'choice'` + `options.length > 0` + `feedback === null` → 2×2 grid of option buttons; each button calls `onSubmit(opt)` directly. The fuzzy-match hint and AnswerForm are hidden in this mode.
 
 ### `<PokemonImage pokemon showSilhouette />`
 Animated image component. When `showSilhouette=true`, applies CSS filter to turn the image into a silhouette:
@@ -650,10 +796,12 @@ Row of stat chips: Points, Wrong, Accuracy %, Streak (shown when ≥ 2).
 Two-step form: choose Create or Join, then enter name (and room code for join).
 
 ### `<MultiplayerLobby roomCode players isHost gameMode onSetGameMode questionCount onSetQuestionCount onStart />`
-Shows room code, player list (from presence), game mode selector (host only), question count selector (host only), START button (host only, disabled if no players).
+Shows room code with a **copy-to-clipboard button** (Check/Copy icons, `copied` state), player list (from presence), game mode selector (host only), question count selector (host only), START button (host only, disabled if no players).
 
-### `<MultiplayerGame pokemon phase silhouetteCountdown answer setAnswer feedback answered firstCorrect players playerName isHost onSubmit onReveal onSkip onQuit questionIndex gameMode options />`
+### `<MultiplayerGame ... hostLeft />`
 In-game view for players. Shows mini-leaderboard, image card, answer input (text or 2×2 choice grid), feedback, "first to answer" banner, host-only Skip/Quit/Reveal controls.
+
+When `hostLeft === true`, renders a `WifiOff` banner: *"The host has left the game."*
 
 ### `<MultiplayerResults players playerName gameHistory isHost onPlayAgain onBackToMenu />`
 Two-tab results screen:
@@ -673,7 +821,7 @@ Two-panel layout:
 
 ---
 
-## 14. Multiplayer Event Protocol
+## 15. Multiplayer Event Protocol
 
 Complete message flow for a game:
 
@@ -714,7 +862,7 @@ HOST                                PLAYERS                         TV VIEW
 
 ---
 
-## 15. Adapting to a Music Quiz (Spotify API)
+## 16. Adapting to a Music Quiz (Spotify API)
 
 Below is a concrete mapping of every piece from the Pokémon quiz to a music quiz.
 

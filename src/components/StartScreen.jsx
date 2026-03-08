@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
-import { Star, Flame } from 'lucide-react'
+import { Star, Flame, Type, List } from 'lucide-react'
 import FloatingSilhouettes from './FloatingSilhouettes'
 
-export default function StartScreen({ onStart, onBack, bestScore, pool }) {
+export default function StartScreen({ onStart, onBack, bestScore, pool, gameMode, onSetGameMode }) {
   return (
     <div className="relative flex flex-col items-center justify-center flex-1 px-6 text-center overflow-hidden w-full">
       <FloatingSilhouettes pool={pool} />
@@ -84,6 +84,35 @@ export default function StartScreen({ onStart, onBack, bestScore, pool }) {
       >
         START QUIZ!
       </motion.button>
+
+      {/* Game mode selector */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.75 }}
+        className="relative z-10 flex gap-3 mt-4"
+      >
+        <button
+          onClick={() => onSetGameMode('open')}
+          className={`flex items-center gap-2 font-bangers text-lg tracking-widest px-5 py-2 rounded-2xl transition-all ${
+            gameMode === 'open'
+              ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+              : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+          }`}
+        >
+          <Type className="w-4 h-4" /> Open
+        </button>
+        <button
+          onClick={() => onSetGameMode('choice')}
+          className={`flex items-center gap-2 font-bangers text-lg tracking-widest px-5 py-2 rounded-2xl transition-all ${
+            gameMode === 'choice'
+              ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+              : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+          }`}
+        >
+          <List className="w-4 h-4" /> Multiple Choice
+        </button>
+      </motion.div>
 
       {onBack && (
         <motion.button

@@ -53,6 +53,9 @@ function PlayerApp() {
     bestScore,
     streakMilestone,
     roundComplete,
+    gameMode,
+    setGameMode,
+    options,
   } = quiz
 
   return (
@@ -127,7 +130,7 @@ function PlayerApp() {
               <AnimatePresence mode="wait">
                 {!gameStarted ? (
                   <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col w-full">
-                    <StartScreen onStart={startGame} onBack={() => setMode(null)} bestScore={bestScore} pool={allPokemon} />
+                    <StartScreen onStart={startGame} onBack={() => setMode(null)} bestScore={bestScore} pool={allPokemon} gameMode={gameMode} onSetGameMode={setGameMode} />
                   </motion.div>
                 ) : roundComplete ? (
                   <motion.div key="summary" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full">
@@ -135,7 +138,7 @@ function PlayerApp() {
                   </motion.div>
                 ) : (
                   <motion.div key="game" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full">
-                    <QuizGame pokemon={pokemon} answer={answer} setAnswer={setAnswer} feedback={feedback} revealed={revealed} phase={phase} onReveal={revealImage} score={score} accuracy={accuracy} streak={streak} onSubmit={submitAnswer} onSkip={skipPokemon} onBack={exitGame} />
+                    <QuizGame pokemon={pokemon} answer={answer} setAnswer={setAnswer} feedback={feedback} revealed={revealed} phase={phase} onReveal={revealImage} score={score} accuracy={accuracy} streak={streak} onSubmit={submitAnswer} onSkip={skipPokemon} onBack={exitGame} gameMode={gameMode} options={options} />
                   </motion.div>
                 )}
               </AnimatePresence>
