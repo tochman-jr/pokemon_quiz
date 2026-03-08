@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gamepad2, Users, AlertTriangle, Star, Target, Flame, Trophy, RotateCcw, ArrowLeft } from 'lucide-react'
@@ -25,6 +25,20 @@ export default function App() {
 
 function PlayerApp() {
   const [mode, setMode] = useState(null) // null | 'solo' | 'multi'
+  const introAudioRef = useRef(null)
+  const introPlayedRef = useRef(false)
+
+  useEffect(() => {
+    introAudioRef.current = new Audio('/whos-that-pokemon_.mp3')
+    introAudioRef.current.volume = 0.5
+  }, [])
+
+  const playIntro = useCallback(() => {
+    if (!introPlayedRef.current && introAudioRef.current) {
+      introPlayedRef.current = true
+      introAudioRef.current.play().catch(() => {})
+    }
+  }, [])
 
   const quiz = useQuiz()
   const multi = useMultiplayer()
@@ -94,13 +108,13 @@ function PlayerApp() {
               <FloatingSilhouettes pool={allPokemon} />
               <h1 className="font-bangers text-5xl text-poke-yellow tracking-widest relative z-10">WHO'S THAT POKÉMON?</h1>
               <button
-                onClick={() => setMode('solo')}
+                onClick={() => { playIntro(); setMode('solo') }}
                 className="relative z-10 font-bangers text-2xl tracking-widest bg-poke-yellow text-poke-navy px-12 py-4 rounded-2xl shadow-[0_5px_0_#C7A008] hover:translate-y-[2px] hover:shadow-[0_3px_0_#C7A008] transition-all w-64 flex items-center justify-center gap-3"
               >
                 <Gamepad2 className="w-6 h-6" /> SOLO
               </button>
               <button
-                onClick={() => setMode('multi')}
+                onClick={() => { playIntro(); setMode('multi') }}
                 className="relative z-10 font-bangers text-2xl tracking-widest bg-poke-blue text-white px-12 py-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,0.3)] hover:translate-y-[2px] transition-all w-64 flex items-center justify-center gap-3"
               >
                 <Users className="w-6 h-6" /> MULTIPLAYER
