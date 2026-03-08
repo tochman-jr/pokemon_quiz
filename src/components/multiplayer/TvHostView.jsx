@@ -493,9 +493,9 @@ function ResultsScreen({ players, gameHistory, onPlayAgain, onNewGame }) {
                 <div
                   style={{ height: `${podiumH * 4}px` }}
                   className={`w-28 flex items-center justify-center font-bangers text-3xl rounded-t-xl
-                    ${MEDAL_BG[idx === 1 ? 0 : idx === 0 ? 1 : 2]}`}
+                    ${MEDAL_BG[idx]}`}
                 >
-                  {['2nd', '1st', '3rd'][idx]}
+                  {['1st', '2nd', '3rd'][idx]}
                 </div>
               </motion.div>
             )
