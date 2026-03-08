@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { User, Type, List, Hash } from 'lucide-react'
+import { User, Type, List, Hash, Tv2 } from 'lucide-react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
 
