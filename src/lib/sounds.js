@@ -50,11 +50,15 @@ export const sounds = {
     }
   },
 
-  /** Two descending sawtooth notes — classic wrong-answer "dun dun" */
+  /** Play the wrong-answer audio file */
   wrong: () => {
-    const t = getCtx().currentTime
-    note(311, t,        0.18, 0.22, 'sawtooth') // Eb4
-    note(233, t + 0.16, 0.28, 0.18, 'sawtooth') // Bb3
+    try {
+      const audio = new Audio('/bumpintowall_X5CNQPB.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {})
+    } catch {
+      // Audio unavailable
+    }
   },
 
   /** Soft two-note descending tap — light skip */
