@@ -62,10 +62,12 @@ export function useTvView(roomCode) {
       if (gameList) {
         allPokemonRef.current = gameList
         setTotalQuestions(gameList.length)
-        setPokemon(gameList[idx])
-      } else {
-        setPokemon(allPokemonRef.current[idx] ?? null)
       }
+
+      // Use the pokemon object sent directly in the payload (works even if the
+      // TV view was opened after Q0 and never received the gameList).
+      const poke = payload.pokemon ?? allPokemonRef.current[idx] ?? null
+      setPokemon(poke)
 
       setQuestionIndex(idx)
       setFirstCorrect(null)

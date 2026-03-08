@@ -271,11 +271,7 @@ function QuestionPanel({ pokemon, phase, silhouetteCountdown, firstCorrect, ques
                     src={pokemon.image_url}
                     alt="Who's that Pokémon?"
                     className="w-64 h-64 xl:w-80 xl:h-80 object-contain select-none"
-                    style={{
-                      filter: pokemon.image_url?.endsWith('.png')
-                        ? 'brightness(0) invert(1)'
-                        : 'brightness(0.12) contrast(1.5) saturate(0) blur(3px)',
-                    }}
+                    style={{ filter: 'brightness(0) invert(1)' }}
                     exit={{ opacity: 0, scale: 1.15 }}
                     transition={{ duration: 0.35 }}
                     draggable={false}

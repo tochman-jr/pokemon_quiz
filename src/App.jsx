@@ -130,6 +130,8 @@ export default function App() {
                 isHost={multi.isHost}
                 gameMode={multi.gameMode}
                 onSetGameMode={multi.setGameMode}
+                questionCount={multi.questionCount}
+                onSetQuestionCount={multi.setQuestionCount}
                 onStart={multi.startGame}
               />
             )}

@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
-import { User, Type, List, Tv2 } from 'lucide-react'
+import { User, Type, List, Hash } from 'lucide-react'
 
-export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, onSetGameMode, onStart }) {
+const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
+
+export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, onSetGameMode, questionCount, onSetQuestionCount, onStart }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -61,6 +63,30 @@ export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, 
             >
               <List className="w-5 h-5" /> Multiple Choice
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Question count selector (host only) */}
+      {isHost && (
+        <div className="w-full flex flex-col gap-2">
+          <p className="font-nunito text-blue-300 text-xs font-700 text-center flex items-center justify-center gap-1">
+            <Hash className="w-3 h-3" /> QUESTIONS
+          </p>
+          <div className="flex gap-2 flex-wrap justify-center">
+            {COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => onSetQuestionCount(n)}
+                className={`font-bangers text-lg tracking-widest px-4 py-2 rounded-2xl transition-all ${
+                  questionCount === n
+                    ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+                    : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+                }`}
+              >
+                {n === 0 ? 'Unlimited' : n}
+              </button>
+            ))}
           </div>
         </div>
       )}

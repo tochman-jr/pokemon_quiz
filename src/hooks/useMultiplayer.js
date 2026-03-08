@@ -61,6 +61,10 @@ export function useMultiplayer() {
   const [options, setOptions]   = useState([])        // MC answer options for current Q
   const fullPokemonListRef      = useRef([])           // all 151 pokemon, never overwritten
 
+  // ── question count (0 = unlimited) ───────────────────────────────────────
+  const [questionCount, setQuestionCount] = useState(10)
+  const questionCountRef                  = useRef(10)
+
   // ── helpers ───────────────────────────────────────────────────────────────
   const broadcast = useCallback((event, payload) => {
     channelRef.current?.send({ type: 'broadcast', event, payload })
@@ -150,8 +154,9 @@ export function useMultiplayer() {
       setOptions(opts)
       startSilhouetteTimer()
 
-      // Notify other players (index only — they already have the game list)
-      broadcast('question', { index: next, gameMode: gameModeRef.current, options: opts })
+      // Notify other players. Include the pokemon object so spectator TV views
+      // don't need to have received the full gameList from Q0.
+      broadcast('question', { index: next, gameMode: gameModeRef.current, options: opts, pokemon: pokemonList[next] })
     },
     [broadcast, startSilhouetteTimer]
   )
@@ -326,7 +331,11 @@ export function useMultiplayer() {
   const startGame = useCallback(() => {
     if (!isHost || allPokemon.length === 0) return
 
-    const shuffled = [...allPokemon].sort(() => Math.random() - 0.5).slice(0, 20)
+    // 0 means unlimited — use all 151; otherwise slice to requested count
+    const count   = questionCountRef.current
+    const shuffled = [...allPokemon]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, count > 0 ? count : allPokemon.length)
 
     // Reset history for new game
     historyRef.current = []
@@ -354,7 +363,7 @@ export function useMultiplayer() {
 
     // Broadcast Q0 with the full game list so non-host players can sync the shuffle.
     // Also include gameMode and options so everyone is in sync.
-    broadcast('question', { index: 0, gameList: shuffled, gameMode: gameModeRef.current, options: opts })
+    broadcast('question', { index: 0, gameList: shuffled, gameMode: gameModeRef.current, options: opts, pokemon: shuffled[0] })
   }, [isHost, allPokemon, broadcast, startSilhouetteTimer])
 
   // ── submit answer ─────────────────────────────────────────────────────────
@@ -423,6 +432,12 @@ export function useMultiplayer() {
     setGameMode(mode)
   }, [])
 
+  // ── set question count (host only, lobby) ──────────────────────────────
+  const changeQuestionCount = useCallback((n) => {
+    questionCountRef.current = n
+    setQuestionCount(n)
+  }, [])
+
   // ── skip question (host only) ─────────────────────────────────────────────
   const skipQuestion = useCallback(() => {
     if (!isHost) return
@@ -484,6 +499,9 @@ export function useMultiplayer() {
     gameMode,
     setGameMode: toggleGameMode,
     options,
+    // question count
+    questionCount,
+    setQuestionCount: changeQuestionCount,
     // actions
     createRoom,
     joinRoom,
