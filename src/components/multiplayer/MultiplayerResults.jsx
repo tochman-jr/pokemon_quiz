@@ -111,7 +111,7 @@ export default function MultiplayerResults({
 
       {/* ── Rounds tab ── */}
       {tab === 'rounds' && (
-        <div className="w-full flex flex-col gap-3 overflow-y-auto max-h-[52vh] pr-1">
+        <div className="w-full flex flex-col gap-3 overflow-y-auto max-h-[55vh] pr-1">
           {gameHistory.length === 0 ? (
             <p className="text-center font-nunito text-blue-400 text-sm py-6">
               No round data available.
@@ -123,52 +123,51 @@ export default function MultiplayerResults({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="bg-poke-dark-blue border border-poke-blue/20 rounded-2xl overflow-hidden"
+                className="w-full bg-poke-navy border border-poke-blue/30 rounded-2xl p-3 flex gap-3"
               >
-                {/* Top: Pokémon identity */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-poke-blue/10">
-                  <span className="font-bangers text-sm text-blue-500 w-5 shrink-0">
-                    {i + 1}
-                  </span>
-                  {q.pokemon?.image_url && (
+                {/* Left: image */}
+                <div className="shrink-0 w-14 h-14 bg-poke-dark-blue rounded-xl flex items-center justify-center">
+                  {q.pokemon?.image_url ? (
                     <img
                       src={q.pokemon.image_url}
                       alt={q.pokemon.name}
-                      className="w-12 h-12 object-contain shrink-0"
+                      className="w-12 h-12 object-contain"
                     />
-                  )}
-                  <span className="font-bangers text-xl text-white tracking-wide capitalize">
-                    {q.pokemon?.name ?? '?'}
-                  </span>
-                  {q.winnerPhase && (
-                    <span
-                      className={`ml-auto font-nunito text-xs font-700 rounded-xl px-2 py-1 shrink-0 ${
-                        q.winnerPhase === 'silhouette'
-                          ? 'bg-yellow-900/60 text-yellow-300 border border-yellow-700/30'
-                          : 'bg-blue-900/60 text-blue-300 border border-blue-700/30'
-                      }`}
-                    >
-                      {q.winnerPhase === 'silhouette' ? '🌑 Silhouette' : '🖼️ Revealed'}
-                    </span>
+                  ) : (
+                    <span className="text-blue-500 text-lg">?</span>
                   )}
                 </div>
 
-                {/* Bottom: Who got it */}
-                <div className="px-4 py-2.5">
+                {/* Right: stacked text */}
+                <div className="flex flex-col justify-center gap-1 min-w-0 flex-1">
+                  {/* Row 1: index + name + phase pill */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bangers text-sm text-blue-400 shrink-0">#{i + 1}</span>
+                    <span className="font-bangers text-lg text-white capitalize leading-none">
+                      {q.pokemon?.name ?? '?'}
+                    </span>
+                    {q.winnerPhase && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 ${
+                        q.winnerPhase === 'silhouette'
+                          ? 'bg-yellow-400/20 text-yellow-300'
+                          : 'bg-sky-400/20 text-sky-300'
+                      }`}>
+                        {q.winnerPhase === 'silhouette' ? 'Silhouette' : 'Revealed'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Row 2: winner info */}
                   {q.winnerName ? (
                     <div className="flex items-center gap-2">
-                      <span className="font-nunito text-xs text-blue-400 shrink-0">First correct:</span>
-                      <span className="font-nunito font-800 text-white text-sm">
-                        {q.winnerName}
-                      </span>
-                      <span className="ml-auto font-bangers text-lg text-green-400 flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-current" /> +{q.winnerPoints}
+                      <span className="text-xs text-blue-400 shrink-0">First:</span>
+                      <span className="text-sm text-white font-bold truncate">{q.winnerName}</span>
+                      <span className="ml-auto shrink-0 font-bangers text-base text-green-400 flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-current" />+{q.winnerPoints}
                       </span>
                     </div>
                   ) : (
-                    <p className="font-nunito text-sm text-blue-500 italic">
-                      Nobody answered correctly
-                    </p>
+                    <span className="text-xs text-blue-500 italic">No one got it</span>
                   )}
                 </div>
               </motion.div>
