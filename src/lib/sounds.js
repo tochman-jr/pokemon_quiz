@@ -39,12 +39,15 @@ function note(freq, start, dur, gain = 0.28, type = 'square') {
 }
 
 export const sounds = {
-  /** Three-note ascending arpeggio — satisfying coin/correct sound */
+  /** Play the correct-answer audio file */
   correct: () => {
-    const t = getCtx().currentTime
-    note(523,  t,        0.10, 0.25) // C5
-    note(659,  t + 0.09, 0.10, 0.25) // E5
-    note(784,  t + 0.18, 0.20, 0.30) // G5
+    try {
+      const audio = new Audio('/12_3.mp3')
+      audio.volume = 0.5
+      audio.play().catch(() => {})
+    } catch {
+      // Audio unavailable
+    }
   },
 
   /** Two descending sawtooth notes — classic wrong-answer "dun dun" */
