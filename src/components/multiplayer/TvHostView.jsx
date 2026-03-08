@@ -8,6 +8,7 @@
  * Players join from their phones/laptops using the displayed room code.
  */
 
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Star, Trophy, Eye, SkipForward, LogOut, Users, Type, List,
@@ -586,14 +587,13 @@ function ResultsScreen({ players, gameHistory, onPlayAgain, onNewGame }) {
 export default function TvHostView() {
   const multi = useMultiplayer()
 
-  // Track answered players per question for the checkmark icons
-  const [answeredSet, setAnsweredSet] = React.useState(new Set())
-  React.useEffect(() => {
+  const [answeredSet, setAnsweredSet] = useState(new Set())
+  useEffect(() => {
     setAnsweredSet(new Set())
   }, [multi.questionIndex])
 
   // Add player name to answered set when firstCorrect fires
-  React.useEffect(() => {
+  useEffect(() => {
     if (multi.firstCorrect) {
       setAnsweredSet((prev) => new Set([...prev, multi.firstCorrect]))
     }
@@ -694,6 +694,3 @@ export default function TvHostView() {
     </div>
   )
 }
-
-// need React for hooks in the root component
-import React from 'react'
