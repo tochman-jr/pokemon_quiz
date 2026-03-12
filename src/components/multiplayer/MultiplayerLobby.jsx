@@ -1,10 +1,21 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Type, List, Hash, Copy, Check } from 'lucide-react'
+import { User, Type, List, Hash, Globe } from 'lucide-react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
+const GEN_OPTIONS = [
+  { value: 'gen1', label: 'Gen 1', sub: '#1–151' },
+  { value: 'gen2', label: 'Gen 2', sub: '#152–251' },
+  { value: 'both', label: 'Both',  sub: '#1–251' },
+]
 
-export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, onSetGameMode, questionCount, onSetQuestionCount, onStart }) {
+export default function MultiplayerLobby({
+  roomCode, players, isHost,
+  gameMode, onSetGameMode,
+  questionCount, onSetQuestionCount,
+  generation, onSetGeneration,
+  onStart,
+}) {
   const [copied, setCopied] = useState(false)
 
   function copyCode() {
@@ -102,6 +113,31 @@ export default function MultiplayerLobby({ roomCode, players, isHost, gameMode, 
                 }`}
               >
                 {n === 0 ? 'Unlimited' : n}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Generation selector (host only) */}
+      {isHost && (
+        <div className="w-full flex flex-col gap-2">
+          <p className="font-nunito text-blue-300 text-xs font-700 text-center flex items-center justify-center gap-1">
+            <Globe className="w-3 h-3" /> GENERATION
+          </p>
+          <div className="flex gap-2 justify-center">
+            {GEN_OPTIONS.map(({ value, label, sub }) => (
+              <button
+                key={value}
+                onClick={() => onSetGeneration(value)}
+                className={`flex flex-col items-center font-bangers tracking-widest px-4 py-2 rounded-2xl transition-all ${
+                  generation === value
+                    ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+                    : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+                }`}
+              >
+                <span className="text-base leading-none">{label}</span>
+                <span className="text-xs font-nunito font-600 opacity-70 leading-none mt-0.5">{sub}</span>
               </button>
             ))}
           </div>

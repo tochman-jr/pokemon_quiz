@@ -2,7 +2,17 @@ import { motion } from 'framer-motion'
 import { Star, Flame, Type, List } from 'lucide-react'
 import FloatingSilhouettes from './FloatingSilhouettes'
 
-export default function StartScreen({ onStart, onBack, bestScore, pool, gameMode, onSetGameMode }) {
+const GEN_OPTIONS = [
+  { value: 'gen1', label: 'Gen 1', sub: 'Kanto #1–151' },
+  { value: 'gen2', label: 'Gen 2', sub: 'Johto #152–251' },
+  { value: 'both', label: 'Both', sub: '#1–251' },
+]
+const COUNT_OPTIONS = [10, 20, 40, 0] // 0 = All
+
+export default function StartScreen({
+  onStart, onBack, bestScore, pool, gameMode, onSetGameMode,
+  generation, onSetGeneration, questionCount, onSetQuestionCount,
+}) {
   return (
     <div className="relative flex flex-col items-center justify-center flex-1 px-6 text-center overflow-hidden w-full">
       <FloatingSilhouettes pool={pool} />
@@ -47,7 +57,7 @@ export default function StartScreen({ onStart, onBack, bestScore, pool, gameMode
         transition={{ delay: 0.5 }}
         className="relative z-10 font-nunito text-blue-200 text-lg max-w-sm mb-10"
       >
-        Identify all <span className="text-poke-yellow font-bold">151</span> original Pokémon from their silhouette. How many do you know?
+      Identify Pokémon from their silhouette. How many do you know?
       </motion.p>
 
       {/* Best score badges */}
@@ -112,6 +122,57 @@ export default function StartScreen({ onStart, onBack, bestScore, pool, gameMode
         >
           <List className="w-4 h-4" /> Multiple Choice
         </button>
+      </motion.div>
+
+      {/* Generation selector */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.82 }}
+        className="relative z-10 flex flex-col items-center gap-2 mt-4 w-full max-w-xs"
+      >
+        <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide">GENERATION</p>
+        <div className="flex gap-2">
+          {GEN_OPTIONS.map(({ value, label, sub }) => (
+            <button
+              key={value}
+              onClick={() => onSetGeneration(value)}
+              className={`flex flex-col items-center font-bangers tracking-widest px-4 py-2 rounded-2xl transition-all ${
+                generation === value
+                  ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+              }`}
+            >
+              <span className="text-base leading-none">{label}</span>
+              <span className="text-xs font-nunito font-600 opacity-70 leading-none mt-0.5">{sub}</span>
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Question count selector */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.88 }}
+        className="relative z-10 flex flex-col items-center gap-2 mt-4 w-full max-w-xs"
+      >
+        <p className="font-nunito text-blue-300 text-xs font-700 tracking-wide"># QUESTIONS</p>
+        <div className="flex gap-2 flex-wrap justify-center">
+          {COUNT_OPTIONS.map((n) => (
+            <button
+              key={n}
+              onClick={() => onSetQuestionCount(n)}
+              className={`font-bangers text-lg tracking-widest px-4 py-2 rounded-2xl transition-all ${
+                questionCount === n
+                  ? 'bg-poke-yellow text-poke-navy shadow-[0_3px_0_#C7A008]'
+                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'
+              }`}
+            >
+              {n === 0 ? 'All' : n}
+            </button>
+          ))}
+        </div>
       </motion.div>
 
       {onBack && (

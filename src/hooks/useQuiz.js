@@ -4,8 +4,13 @@ import { isAnswerCorrect } from '../lib/fuzzyMatch'
 import { sounds } from '../lib/sounds'
 
 const FEEDBACK_DURATION = 2000
-const ROUND_LENGTH = 20
 const STREAK_MILESTONES = new Set([5, 10, 15, 20])
+
+function filterByGeneration(list, gen) {
+  if (gen === 'gen1') return list.filter((p) => p.number <= 151)
+  if (gen === 'gen2') return list.filter((p) => p.number >= 152 && p.number <= 251)
+  return list // 'both'
+}
 
 function generateOptions(correctPokemon, fullList) {
   const wrong = fullList
@@ -44,7 +49,26 @@ export function useQuiz() {
   const gameModeRef = useRef('open')
   const [options, setOptions] = useState([])
 
-  // Fetch all 151 pokemon and shuffle them into a queue
+  // ── generation + question count ───────────────────────────────────────
+  const [generation, setGenerationState]       = useState('gen1') // 'gen1'|'gen2'|'both'
+  const generationRef                           = useRef('gen1')
+  const [questionCount, setQuestionCountState] = useState(20)      // 0 = all in pool
+  const questionCountRef                        = useRef(20)
+  const roundSizeRef                            = useRef(20)
+
+  const buildQueue = useCallback((fullList, gen, count) => {
+    const filtered = filterByGeneration(fullList, gen)
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5)
+    const q = count > 0 ? shuffled.slice(0, Math.min(count, shuffled.length)) : shuffled
+    roundSizeRef.current = q.length
+    setQueue(q)
+    setPokemon(q[0] ?? null)
+    setPhase('silhouette')
+    setAnswer('')
+    setFeedback(null)
+    setRevealed(false)
+  }, [])
+
   const loadPokemon = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -59,22 +83,20 @@ export function useQuiz() {
 
       setAllPokemon(data) // keep full unshuffled pool for background decoration
       allPokemonRef.current = data
-      const shuffled = [...data].sort(() => Math.random() - 0.5)
-      setQueue(shuffled)
-      setPokemon(shuffled[0])
-      setPhase('silhouette')
+      buildQueue(data, generationRef.current, questionCountRef.current)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [buildQueue])
 
   const nextPokemon = useCallback(() => {
     setQueue((prev) => {
       if (prev.length <= 1) {
-        // Re-shuffle when we run out
-        const reshuffled = [...prev].sort(() => Math.random() - 0.5)
+        // Queue depleted — reshuffle the full filtered pool
+        const filtered = filterByGeneration(allPokemonRef.current, generationRef.current)
+        const reshuffled = [...filtered].sort(() => Math.random() - 0.5)
         setPokemon(reshuffled[0])
         return reshuffled.slice(1)
       }
@@ -95,7 +117,8 @@ export function useQuiz() {
   // Regenerate MC options whenever the current pokemon changes
   useEffect(() => {
     if (gameModeRef.current === 'choice' && pokemon && allPokemonRef.current.length > 0) {
-      setOptions(generateOptions(pokemon, allPokemonRef.current))
+      const pool = filterByGeneration(allPokemonRef.current, generationRef.current)
+      setOptions(generateOptions(pokemon, pool))
     } else {
       setOptions([])
     }
@@ -105,11 +128,28 @@ export function useQuiz() {
     gameModeRef.current = mode
     setGameMode(mode)
     if (mode === 'choice' && pokemon && allPokemonRef.current.length > 0) {
-      setOptions(generateOptions(pokemon, allPokemonRef.current))
+      const pool = filterByGeneration(allPokemonRef.current, generationRef.current)
+      setOptions(generateOptions(pokemon, pool))
     } else {
       setOptions([])
     }
   }, [pokemon])
+
+  const setGeneration = useCallback((gen) => {
+    generationRef.current = gen
+    setGenerationState(gen)
+    if (allPokemonRef.current.length > 0) {
+      buildQueue(allPokemonRef.current, gen, questionCountRef.current)
+    }
+  }, [buildQueue])
+
+  const setQuestionCount = useCallback((count) => {
+    questionCountRef.current = count
+    setQuestionCountState(count)
+    if (allPokemonRef.current.length > 0) {
+      buildQueue(allPokemonRef.current, generationRef.current, count)
+    }
+  }, [buildQueue])
 
   const submitAnswer = useCallback(
     (userAnswer) => {
@@ -183,16 +223,12 @@ export function useQuiz() {
     setScore({ points: 0, correct: 0, total: 0 })
     setStreak(0)
     setRoundComplete(false)
-    setPhase('silhouette')
-    setAnswer('')
-    setFeedback(null)
-    setRevealed(false)
-    nextPokemon()
-  }, [nextPokemon])
+    buildQueue(allPokemonRef.current, generationRef.current, questionCountRef.current)
+  }, [buildQueue])
 
-  // Trigger round summary after ROUND_LENGTH answers and persist best points
+  // Trigger round summary when all questions are answered
   useEffect(() => {
-    if (score.total > 0 && score.total % ROUND_LENGTH === 0 && !roundComplete) {
+    if (score.total > 0 && score.total >= roundSizeRef.current && !roundComplete) {
       setRoundComplete(true)
       if (score.points > (bestScore.points ?? 0)) {
         const updated = { points: score.points, streak: Math.max(bestScore.streak ?? 0, streak) }
@@ -236,5 +272,9 @@ export function useQuiz() {
     gameMode,
     setGameMode: changeGameMode,
     options,
+    generation,
+    setGeneration,
+    questionCount,
+    setQuestionCount,
   }
 }

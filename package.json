@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "start": "serve dist",
     "scrape": "node scripts/scrape-pokemon.js",
+    "scrape-gen2": "node scripts/scrape-gen2.js",
     "process-images": "node scripts/process-images.js"
   },
   "dependencies": {

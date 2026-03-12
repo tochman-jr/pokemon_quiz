@@ -70,6 +70,10 @@ function PlayerApp() {
     gameMode,
     setGameMode,
     options,
+    generation,
+    setGeneration,
+    questionCount,
+    setQuestionCount,
   } = quiz
 
   return (
@@ -144,7 +148,18 @@ function PlayerApp() {
               <AnimatePresence mode="wait">
                 {!gameStarted ? (
                   <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col w-full">
-                    <StartScreen onStart={startGame} onBack={() => setMode(null)} bestScore={bestScore} pool={allPokemon} gameMode={gameMode} onSetGameMode={setGameMode} />
+                    <StartScreen
+                      onStart={startGame}
+                      onBack={() => setMode(null)}
+                      bestScore={bestScore}
+                      pool={allPokemon}
+                      gameMode={gameMode}
+                      onSetGameMode={setGameMode}
+                      generation={generation}
+                      onSetGeneration={setGeneration}
+                      questionCount={questionCount}
+                      onSetQuestionCount={setQuestionCount}
+                    />
                   </motion.div>
                 ) : roundComplete ? (
                   <motion.div key="summary" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full">
@@ -181,6 +196,8 @@ function PlayerApp() {
                 onSetGameMode={multi.setGameMode}
                 questionCount={multi.questionCount}
                 onSetQuestionCount={multi.setQuestionCount}
+                generation={multi.generation}
+                onSetGeneration={multi.setGeneration}
                 onStart={multi.startGame}
               />
             )}

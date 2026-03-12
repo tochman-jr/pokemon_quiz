@@ -16,6 +16,12 @@ function generateOptions(correctPokemon, fullList) {
   return [correctPokemon.name, ...wrong].sort(() => Math.random() - 0.5)
 }
 
+function filterByGeneration(list, gen) {
+  if (gen === 'gen1') return list.filter((p) => p.number <= 151)
+  if (gen === 'gen2') return list.filter((p) => p.number >= 152 && p.number <= 251)
+  return list // 'both'
+}
+
 export function useMultiplayer() {
   // ── lobby state ──────────────────────────────────────────────────────────
   const [screen, setScreen]         = useState('home')   // 'home'|'lobby'|'game'|'results'
@@ -66,7 +72,11 @@ export function useMultiplayer() {
   const [gameMode, setGameMode] = useState('open')   // 'open' | 'choice'
   const gameModeRef             = useRef('open')
   const [options, setOptions]   = useState([])        // MC answer options for current Q
-  const fullPokemonListRef      = useRef([])           // all 151 pokemon, never overwritten
+  const fullPokemonListRef      = useRef([])           // all pokemon, never overwritten
+
+  // ── generation (host picks, broadcast syncs non-host) ───────────────────────
+  const [generation, setGenerationState] = useState('gen1') // 'gen1'|'gen2'|'both'
+  const generationRef                    = useRef('gen1')
 
   // ── question count (0 = unlimited) ───────────────────────────────────────
   const [questionCount, setQuestionCount] = useState(10)
@@ -146,8 +156,9 @@ export function useMultiplayer() {
       }
 
       // Generate MC options for next question (empty array in open mode)
+      const genPoolFull = filterByGeneration(fullPokemonListRef.current, generationRef.current)
       const opts = gameModeRef.current === 'choice'
-        ? generateOptions(pokemonList[next], fullPokemonListRef.current)
+        ? generateOptions(pokemonList[next], genPoolFull)
         : []
 
       // Update host state directly
@@ -366,11 +377,12 @@ export function useMultiplayer() {
   const startGame = useCallback(() => {
     if (!isHost || allPokemon.length === 0) return
 
-    // 0 means unlimited — use all 151; otherwise slice to requested count
+    // 0 means unlimited — use full pool; otherwise slice to requested count
+    const genPool = filterByGeneration(allPokemon, generationRef.current)
     const count   = questionCountRef.current
-    const shuffled = [...allPokemon]
+    const shuffled = [...genPool]
       .sort(() => Math.random() - 0.5)
-      .slice(0, count > 0 ? count : allPokemon.length)
+      .slice(0, count > 0 ? count : genPool.length)
 
     // Reset history for new game
     historyRef.current = []
@@ -379,8 +391,9 @@ export function useMultiplayer() {
     setGameHistory([])
 
     // Generate MC options for Q0 (empty in open mode)
+    const genPoolFull = filterByGeneration(fullPokemonListRef.current, generationRef.current)
     const opts = gameModeRef.current === 'choice'
-      ? generateOptions(shuffled[0], fullPokemonListRef.current)
+      ? generateOptions(shuffled[0], genPoolFull)
       : []
 
     // Update host state
@@ -476,7 +489,11 @@ export function useMultiplayer() {
     questionCountRef.current = n
     setQuestionCount(n)
   }, [])
-
+  // ── set generation (host only, lobby) ───────────────────────────────────
+  const changeGeneration = useCallback((gen) => {
+    generationRef.current = gen
+    setGenerationState(gen)
+  }, [])
   // ── skip question (host only) ─────────────────────────────────────────────
   const skipQuestion = useCallback(() => {
     if (!isHost) return
@@ -547,6 +564,9 @@ export function useMultiplayer() {
     // question count
     questionCount,
     setQuestionCount: changeQuestionCount,
+    // generation
+    generation,
+    setGeneration: changeGeneration,
     // actions
     createRoom,
     createRoomAsTV,
