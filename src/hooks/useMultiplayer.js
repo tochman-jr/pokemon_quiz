@@ -22,9 +22,19 @@ function filterByGeneration(list, gen) {
   return list // 'both'
 }
 
-function preloadImages(list, from, count = 5) {
-  for (let i = from; i < Math.min(from + count, list.length); i++) {
-    if (list[i]?.image_url) new Image().src = list[i].image_url
+// Module-level cache keeps Image objects alive so the browser can't evict
+// them from the memory cache between preload and display.
+const imageCache = new Map()
+
+function preloadImages(list, from, count = list.length) {
+  const end = count === list.length ? list.length : Math.min(from + count, list.length)
+  for (let i = from; i < end; i++) {
+    const url = list[i]?.image_url
+    if (url && !imageCache.has(url)) {
+      const img = new Image()
+      img.src = url
+      imageCache.set(url, img)
+    }
   }
 }
 
@@ -177,8 +187,6 @@ export function useMultiplayer() {
       setFirstCorrect(null)
       setOptions(opts)
       startSilhouetteTimer()
-      // Preload the next few images so they're cached before the player reaches them
-      preloadImages(pokemonList, next + 1, 4)
 
       // Notify other players. Include the pokemon object so spectator TV views
       // don't need to have received the full gameList from Q0.
@@ -236,8 +244,8 @@ export function useMultiplayer() {
           setAllPokemon(gameList)
           allPokemonRef.current = gameList
           setPokemon(gameList[idx])
-          // Preload upcoming images for non-host players
-          preloadImages(gameList, idx, 5)
+          // Preload the entire game list so non-host players are fully cached
+          preloadImages(gameList, 0)
         } else {
           // Subsequent questions: allPokemon is already the game list
           setAllPokemon((prev) => {
@@ -418,8 +426,8 @@ export function useMultiplayer() {
     setOptions(opts)
     startSilhouetteTimer()
     setScreen('game')
-    // Preload first 5 images up front
-    preloadImages(shuffled, 0, 5)
+    // Preload the entire game queue so every image is ready before it's needed
+    preloadImages(shuffled, 0)
 
     // Broadcast Q0 with the full game list so non-host players can sync the shuffle.
     // Also include gameMode and options so everyone is in sync.

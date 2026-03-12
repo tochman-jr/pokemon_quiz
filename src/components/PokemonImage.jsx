@@ -22,6 +22,7 @@ export default function PokemonImage({ pokemon, showSilhouette }) {
                   key="silhouette"
                   src={pokemon.image_url}
                   alt="Who's that Pokémon?"
+                  decoding="async"
                   className="w-48 h-48 md:w-64 md:h-64 object-contain"
                   style={{
                     filter: pokemon.image_url?.endsWith('.png')
@@ -37,6 +38,7 @@ export default function PokemonImage({ pokemon, showSilhouette }) {
                   key="revealed"
                   src={pokemon.image_url}
                   alt={pokemon.name}
+                  decoding="async"
                   className="w-48 h-48 md:w-64 md:h-64 object-contain"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}

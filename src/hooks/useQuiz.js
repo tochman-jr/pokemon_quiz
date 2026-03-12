@@ -12,9 +12,19 @@ function filterByGeneration(list, gen) {
   return list // 'both'
 }
 
-function preloadImages(queue, from, count = 5) {
-  for (let i = from; i < Math.min(from + count, queue.length); i++) {
-    if (queue[i]?.image_url) new Image().src = queue[i].image_url
+// Module-level cache keeps Image objects alive so the browser can't evict
+// them from the memory cache between preload and display.
+const imageCache = new Map()
+
+function preloadImages(list, from, count = list.length) {
+  const end = count === list.length ? list.length : Math.min(from + count, list.length)
+  for (let i = from; i < end; i++) {
+    const url = list[i]?.image_url
+    if (url && !imageCache.has(url)) {
+      const img = new Image()
+      img.src = url
+      imageCache.set(url, img)
+    }
   }
 }
 
@@ -73,8 +83,8 @@ export function useQuiz() {
     setAnswer('')
     setFeedback(null)
     setRevealed(false)
-    // Preload first 5 images so they're cached before the player reaches them
-    preloadImages(q, 0, 5)
+    // Preload the entire queue so every image is ready before it's needed
+    preloadImages(q, 0)
   }, [])
 
   const loadPokemon = useCallback(async () => {
@@ -109,8 +119,6 @@ export function useQuiz() {
         return reshuffled.slice(1)
       }
       setPokemon(prev[1])
-      // Preload the next 4 images so they're ready before the player reaches them
-      preloadImages(prev, 2, 4)
       return prev.slice(1)
     })
     setAnswer('')
