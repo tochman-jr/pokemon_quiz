@@ -12,6 +12,12 @@ function filterByGeneration(list, gen) {
   return list // 'both'
 }
 
+function preloadImages(queue, from, count = 5) {
+  for (let i = from; i < Math.min(from + count, queue.length); i++) {
+    if (queue[i]?.image_url) new Image().src = queue[i].image_url
+  }
+}
+
 function generateOptions(correctPokemon, fullList) {
   const wrong = fullList
     .filter((p) => p.id !== correctPokemon.id)
@@ -67,6 +73,8 @@ export function useQuiz() {
     setAnswer('')
     setFeedback(null)
     setRevealed(false)
+    // Preload first 5 images so they're cached before the player reaches them
+    preloadImages(q, 0, 5)
   }, [])
 
   const loadPokemon = useCallback(async () => {
@@ -101,11 +109,8 @@ export function useQuiz() {
         return reshuffled.slice(1)
       }
       setPokemon(prev[1])
-      // Preload the image two ahead so it's ready when we get there
-      if (prev[2]) {
-        const img = new Image()
-        img.src = prev[2].image_url
-      }
+      // Preload the next 4 images so they're ready before the player reaches them
+      preloadImages(prev, 2, 4)
       return prev.slice(1)
     })
     setAnswer('')
