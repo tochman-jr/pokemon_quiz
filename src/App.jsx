@@ -29,10 +29,12 @@ function PlayerApp() {
   const introAudioRef = useRef(null)
   const introPlayedRef = useRef(false)
 
-  // Auto-switch to multiplayer join when ?join=CODE is in the URL
+  // Auto-switch to multiplayer join when ?join=CODE is in the URL (or hash params)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('join')
+    // Support both /?join=CODE (direct) and /#/?join=CODE (from QR via HashRouter)
+    const searchParams = new URLSearchParams(window.location.search)
+    const hashSearch   = new URLSearchParams(window.location.hash.replace(/^#\/?/, '').split('?')[1] ?? '')
+    const code = searchParams.get('join') || hashSearch.get('join')
     if (code) {
       setJoinCode(code.toUpperCase())
       setMode('multi')

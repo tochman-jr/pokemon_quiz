@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { User, Type, List, Hash, Globe, Copy, Check } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
 const GEN_OPTIONS = [
@@ -37,6 +38,18 @@ export default function MultiplayerLobby({
         <p className="font-nunito text-blue-300 text-xs mb-1">ROOM CODE</p>
         <p className="font-bangers text-5xl tracking-[0.3em] text-white">{roomCode}</p>
         <p className="font-nunito text-blue-400 text-xs mt-1">Share this with friends</p>
+        {/* QR code pointing directly to the join URL */}
+        <div className="mt-3 flex justify-center">
+          <div className="bg-white rounded-xl p-2">
+            <QRCodeSVG
+              value={`${window.location.origin}${window.location.pathname}#/?join=${roomCode}`}
+              size={112}
+              bgColor="#ffffff"
+              fgColor="#1a1f6e"
+              level="M"
+            />
+          </div>
+        </div>
         <button
           onClick={copyCode}
           aria-label="Copy room code"
