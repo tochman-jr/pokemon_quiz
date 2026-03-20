@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { User, Type, List, Hash, Globe } from 'lucide-react'
+import { User, Type, List, Hash, Globe, Copy, Check } from 'lucide-react'
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 0] // 0 = Unlimited
 const GEN_OPTIONS = [
