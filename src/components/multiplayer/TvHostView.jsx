@@ -97,67 +97,89 @@ function SetupScreen({ gameMode, onSetGameMode, questionCount, onSetQuestionCoun
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center gap-10 h-full text-center px-12"
+      className="flex flex-1 overflow-hidden"
     >
-      <div className="flex flex-col items-center gap-2">
-        <Tv2 className="w-14 h-14 text-poke-yellow" />
-        <h1 className="font-bangers text-7xl text-poke-yellow tracking-widest drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]">
-          TV PARTY HOST
-        </h1>
-        <p className="font-nunito text-blue-300 text-xl">
-          Configure the game, then show this screen to your players.
-        </p>
+      {/* Left — branding */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-16 border-r border-poke-blue/20">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-poke-yellow/20 blur-3xl scale-150" />
+            <Tv2 className="relative w-24 h-24 text-poke-yellow drop-shadow-[0_0_30px_rgba(250,204,21,0.6)]" />
+          </div>
+          <h1 className="font-bangers text-8xl text-poke-yellow tracking-widest drop-shadow-[0_0_40px_rgba(250,204,21,0.4)] text-center leading-none">
+            PARTY HOST
+          </h1>
+          <p className="font-nunito text-blue-300 text-xl text-center max-w-md">
+            Configure your game, create a room, then let your friends scan the QR code to join.
+          </p>
+        </motion.div>
       </div>
 
-      {/* Game mode */}
-      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-        <p className="font-nunito text-blue-300 font-700 uppercase tracking-widest text-sm">Question Type</p>
-        <div className="flex gap-4 w-full">
-          {[['open', <Type key="t" className="w-6 h-6" />, 'Open Answer'],
-            ['choice', <List key="l" className="w-6 h-6" />, 'Multiple Choice']].map(([val, icon, label]) => (
-            <button
-              key={val}
-              onClick={() => onSetGameMode(val)}
-              className={`flex-1 flex items-center justify-center gap-2 font-bangers text-2xl tracking-widest py-4 rounded-2xl transition-all
-                ${gameMode === val
-                  ? 'bg-poke-yellow text-poke-navy shadow-[0_5px_0_#C7A008]'
-                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'}`}
-            >
-              {icon} {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Right — config */}
+      <div className="w-[480px] shrink-0 flex flex-col justify-center gap-8 px-12 py-12">
+        <motion.div
+          initial={{ x: 30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="flex flex-col gap-8"
+        >
+          {/* Game mode */}
+          <div className="flex flex-col gap-3">
+            <p className="font-nunito text-blue-300 font-700 uppercase tracking-widest text-sm flex items-center gap-2">
+              <Type className="w-4 h-4" /> Question Type
+            </p>
+            <div className="flex gap-3 w-full">
+              {[['open', 'Open Answer'], ['choice', 'Multiple Choice']].map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => onSetGameMode(val)}
+                  className={`flex-1 font-bangers text-xl tracking-widest py-4 rounded-2xl transition-all
+                    ${gameMode === val
+                      ? 'bg-poke-yellow text-poke-navy shadow-[0_5px_0_#C7A008] translate-y-0'
+                      : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Question count */}
-      <div className="flex flex-col items-center gap-3 w-full max-w-lg">
-        <p className="font-nunito text-blue-300 font-700 uppercase tracking-widest text-sm flex items-center gap-1">
-          <Hash className="w-4 h-4" /> Questions
-        </p>
-        <div className="flex gap-3">
-          {COUNT_OPTIONS.map((n) => (
-            <button
-              key={n}
-              onClick={() => onSetQuestionCount(n)}
-              className={`font-bangers text-2xl tracking-widest px-6 py-3 rounded-2xl transition-all
-                ${questionCount === n
-                  ? 'bg-poke-yellow text-poke-navy shadow-[0_4px_0_#C7A008]'
-                  : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'}`}
-            >
-              {n === 0 ? 'ALL' : n}
-            </button>
-          ))}
-        </div>
-      </div>
+          {/* Question count */}
+          <div className="flex flex-col gap-3">
+            <p className="font-nunito text-blue-300 font-700 uppercase tracking-widest text-sm flex items-center gap-2">
+              <Hash className="w-4 h-4" /> Questions
+            </p>
+            <div className="flex gap-3">
+              {COUNT_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => onSetQuestionCount(n)}
+                  className={`flex-1 font-bangers text-2xl tracking-widest py-4 rounded-2xl transition-all
+                    ${questionCount === n
+                      ? 'bg-poke-yellow text-poke-navy shadow-[0_4px_0_#C7A008]'
+                      : 'bg-poke-dark-blue text-blue-300 border border-poke-blue/30 hover:bg-poke-blue/20'}`}
+                >
+                  {n === 0 ? 'ALL' : n}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <motion.button
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-        onClick={onCreate}
-        className="font-bangers text-4xl tracking-widest bg-poke-yellow text-poke-navy px-20 py-5 rounded-2xl shadow-[0_8px_0_#C7A008] hover:shadow-[0_4px_0_#C7A008] hover:translate-y-1 transition-all flex items-center gap-3"
-      >
-        <Play className="w-8 h-8 fill-current" /> CREATE ROOM
-      </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onCreate}
+            className="w-full font-bangers text-4xl tracking-widest bg-poke-yellow text-poke-navy py-6 rounded-2xl shadow-[0_8px_0_#C7A008] hover:shadow-[0_4px_0_#C7A008] hover:translate-y-1 transition-all flex items-center justify-center gap-3"
+          >
+            <Play className="w-8 h-8 fill-current" /> CREATE ROOM
+          </motion.button>
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -190,20 +212,17 @@ function LobbyScreen({ roomCode, players, gameMode, onSetGameMode, questionCount
             </p>
           </div>
           <p className="font-nunito text-blue-400 text-base">
-            Go to <span className="text-poke-yellow font-700">{joinUrl}</span> and join with this code
+            Go to <span className="text-poke-yellow font-700">{joinUrl}</span> — or scan:
           </p>
-          <div className="mt-4 bg-white rounded-2xl p-4">
+          <div className="bg-white rounded-2xl p-3 shadow-[0_0_40px_rgba(250,204,21,0.2)]">
             <QRCodeSVG
-              value={`${baseUrl}?join=${roomCode}`}
-              size={180}
+              value={`${baseUrl}#/?join=${roomCode}`}
+              size={200}
               level="M"
               bgColor="#ffffff"
               fgColor="#1a1a2e"
             />
           </div>
-          <p className="font-nunito text-blue-400 text-sm mt-1">
-            or scan to join instantly
-          </p>
         </motion.div>
       </div>
 
@@ -628,7 +647,7 @@ export default function TvHostView() {
       <div className="relative z-10 flex items-center justify-between px-8 py-4 border-b border-poke-blue/20 bg-poke-dark-blue/60 backdrop-blur shrink-0">
         <div className="flex items-center gap-3">
           <Tv2 className="w-6 h-6 text-poke-yellow" />
-          <span className="font-bangers text-2xl tracking-widest text-white">WHO'S THAT POKÉMON? — TV HOST</span>
+          <span className="font-bangers text-2xl tracking-widest text-white">WHO'S THAT POKÉMON? — PARTY HOST</span>
         </div>
         <div className="flex items-center gap-6">
           {multi.roomCode && (
