@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { QRCodeSVG } from 'qrcode.react'
 import {
   Star, Trophy, Eye, SkipForward, LogOut, Users, Type, List,
   Hash, Play, Tv2, CheckCircle2, RotateCcw, Target,
@@ -23,7 +24,8 @@ const MEDAL_GLOW = ['shadow-[0_0_20px_rgba(250,204,21,0.5)]', 'shadow-[0_0_12px_
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-const joinUrl = `${window.location.origin}${window.location.pathname}`
+const baseUrl = `${window.location.origin}${window.location.pathname}`
+const joinUrl = baseUrl
 
 function PlayerCard({ player, rank, answered = false, flashKey }) {
   return (
@@ -189,6 +191,18 @@ function LobbyScreen({ roomCode, players, gameMode, onSetGameMode, questionCount
           </div>
           <p className="font-nunito text-blue-400 text-base">
             Go to <span className="text-poke-yellow font-700">{joinUrl}</span> and join with this code
+          </p>
+          <div className="mt-4 bg-white rounded-2xl p-4">
+            <QRCodeSVG
+              value={`${baseUrl}?join=${roomCode}`}
+              size={180}
+              level="M"
+              bgColor="#ffffff"
+              fgColor="#1a1a2e"
+            />
+          </div>
+          <p className="font-nunito text-blue-400 text-sm mt-1">
+            or scan to join instantly
           </p>
         </motion.div>
       </div>

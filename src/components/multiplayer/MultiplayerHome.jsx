@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Gamepad2, Link2 } from 'lucide-react'
 
-export default function MultiplayerHome({ onCreate, onJoin, onBack }) {
-  const [mode, setMode]       = useState(null) // 'create' | 'join'
+export default function MultiplayerHome({ onCreate, onJoin, onBack, initialCode }) {
+  const [mode, setMode]       = useState(initialCode ? 'join' : null)
   const [name, setName]       = useState('')
-  const [code, setCode]       = useState('')
+  const [code, setCode]       = useState(initialCode || '')
 
   function handleCreate(e) {
     e.preventDefault()

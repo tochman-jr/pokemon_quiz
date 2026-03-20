@@ -25,8 +25,21 @@ export default function App() {
 
 function PlayerApp() {
   const [mode, setMode] = useState(null) // null | 'solo' | 'multi'
+  const [joinCode, setJoinCode] = useState(null)
   const introAudioRef = useRef(null)
   const introPlayedRef = useRef(false)
+
+  // Auto-switch to multiplayer join when ?join=CODE is in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('join')
+    if (code) {
+      setJoinCode(code.toUpperCase())
+      setMode('multi')
+      // Clean up the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   useEffect(() => {
     introAudioRef.current = new Audio('/whos-that-pokemon_.mp3')
@@ -182,8 +195,9 @@ function PlayerApp() {
               <MultiplayerHome
                 key="mphome"
                 onCreate={multi.createRoom}
-                onJoin={multi.joinRoom}
-                onBack={() => setMode(null)}
+                onJoin={(name, code) => { setJoinCode(null); multi.joinRoom(name, code) }}
+                onBack={() => { setJoinCode(null); setMode(null) }}
+                initialCode={joinCode}
               />
             )}
             {multi.screen === 'lobby' && (
