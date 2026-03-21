@@ -1,7 +1,7 @@
 /**
  * TvHostView — full-screen host interface designed for a TV / projector.
  *
- * Route: /#/tv
+ * Route: /board
  *
  * The TV IS the host. It creates a room (without appearing in the player list),
  * controls the game, and displays the current Pokémon + live animated scoreboard.

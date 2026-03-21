@@ -17,7 +17,7 @@ import TvHostView from './components/multiplayer/TvHostView'
 export default function App() {
   return (
     <Routes>
-      <Route path="/tv" element={<TvHostView />} />
+      <Route path="/board" element={<TvHostView />} />
       <Route path="*" element={<PlayerApp />} />
     </Routes>
   )
