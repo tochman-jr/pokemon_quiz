@@ -39,6 +39,7 @@ This document captures every architectural decision, pattern, and implementation
 | Realtime / Multiplayer | Supabase Realtime Channels | — |
 | Scraping (data seed) | Puppeteer | 24 |
 | Image processing | Jimp | 0.22 |
+| QR code | qrcode.react | 4 |
 | Fonts | Google Fonts (Bangers, Nunito) | — |
 | Prod server | `serve` (static) | 14 |
 
@@ -58,7 +59,8 @@ This document captures every architectural decision, pattern, and implementation
 ├── .env                        # VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
 │
 ├── scripts/
-│   ├── scrape-pokemon.js       # Puppeteer scraper → uploads images → seeds DB
+│   ├── scrape-pokemon.js       # Puppeteer scraper → uploads images → seeds DB (Gen 1)
+│   ├── scrape-gen2.js          # Gen 2 scraper (same pattern, #152–251)
 │   └── process-images.js      # JPG → transparent PNG (BFS white removal)
 │
 ├── supabase/
@@ -67,7 +69,7 @@ This document captures every architectural decision, pattern, and implementation
 │
 └── src/
     ├── main.jsx                # React root, BrowserRouter
-    ├── App.jsx                 # Route split: /tv → TvHostView, /* → PlayerApp
+    ├── App.jsx                 # Route split: /board → TvHostView, /* → PlayerApp
     ├── index.css               # Tailwind directives + global reset
     │
     ├── lib/
@@ -288,8 +290,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 export default function App() {
   return (
     <Routes>
-      <Route path="/tv" element={<TvHostView />} />  {/* Full-screen TV mode */}
-      <Route path="*"   element={<PlayerApp />} />   {/* All other routes */}
+      <Route path="/board" element={<TvHostView />} />  {/* Full-screen TV mode */}
+      <Route path="*"      element={<PlayerApp />} />   {/* All other routes */}
     </Routes>
   )
 }
@@ -302,9 +304,19 @@ export default function App() {
 
 Both hooks are instantiated at the top of `PlayerApp` so their state persists while switching views.
 
+### QR code join via URL parameter
+
+When `PlayerApp` mounts, it reads `?join=CODE` from the URL (supporting both `/?join=CODE` and `/#/?join=CODE` for hash-router setups). If found:
+1. Sets `joinCode` state to the code (uppercased)
+2. Switches to `mode='multi'` automatically
+3. Cleans the URL with `window.history.replaceState()`
+4. Passes `initialCode={joinCode}` to `<MultiplayerHome>`, which opens the join form with the room code pre-filled — the player just enters their name and taps JOIN
+
+This powers the **QR code flow**: the TV lobby screen displays a QR code encoding `{origin}#/?join={roomCode}`. Players scan → browser opens → auto-navigates to the join form.
+
 ### Navigation model
 
-There is **no URL-based navigation** for solo/multiplayer — it is controlled by a single `mode` state variable. Only the TV view (`/tv`) has its own route.
+There is **no URL-based navigation** for solo/multiplayer — it is controlled by a single `mode` state variable. Only the TV view (`/board`) has its own route.
 
 ---
 
@@ -792,8 +804,8 @@ Animated banner. Feedback keys and their display:
 ### `<ScoreBoard score accuracy streak />`
 Row of stat chips: Points, Wrong, Accuracy %, Streak (shown when ≥ 2).
 
-### `<MultiplayerHome onCreate onJoin onBack />`
-Two-step form: choose Create or Join, then enter name (and room code for join).
+### `<MultiplayerHome onCreate onJoin onBack initialCode? />`
+Two-step form: choose Create or Join, then enter name (and room code for join). When `initialCode` is provided (from the QR code URL), the component opens directly to the join form with the room code pre-filled.
 
 ### `<MultiplayerLobby roomCode players isHost gameMode onSetGameMode questionCount onSetQuestionCount onStart />`
 Shows room code with a **copy-to-clipboard button** (Check/Copy icons, `copied` state), player list (from presence), game mode selector (host only), question count selector (host only), START button (host only, disabled if no players).
@@ -809,9 +821,9 @@ Two-tab results screen:
 - **Rounds tab:** per-question history (image, name, who won, points, phase).
 
 ### `<TvHostView />`
-Full-screen TV interface at `/tv`. Uses `useMultiplayer` as host. Three sub-screens:
-1. **Setup** — mode and question count, then Create Room → shows QR-able URL + room code.
-2. **Lobby** — player list + start button.
+Full-screen TV interface at `/board`. Uses `useMultiplayer` as host. Three sub-screens:
+1. **Setup** — mode and question count, then Create Room.
+2. **Lobby** — shows room code, QR code (via `qrcode.react`), join URL, player list + start button. The QR code encodes `{origin}#/?join={roomCode}` so players can scan and auto-join.
 3. **Game/Results** — renders `<TvView roomCode />` which handles its own channel via `useTvView`.
 
 ### `<TvView roomCode />`
@@ -1074,5 +1086,7 @@ Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the platform's environme
 6. **Re-shuffle on queue depletion.** In `useQuiz`, when the queue runs out, re-shuffle the existing array in-place (don't re-fetch from DB) to keep the game infinite without extra network calls.
 
 7. **TV view joins without presence.** Pass `skipPresence: true` / don't call `channel.track()` from the TV to avoid the TV name appearing in the player list.
+
+9. **QR code join URL format.** The QR code uses `{origin}#/?join={roomCode}` to work with both hash-router and standard routing. `PlayerApp` reads this on mount and cleans the URL.
 
 8. **State vs Ref for game values.** Use `useState` for anything that drives component re-renders (display). Use `useRef` for values that only need to be read inside callbacks or timers (e.g. `questionIndexRef`, `allPokemonRef`).
